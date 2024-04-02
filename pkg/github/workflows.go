@@ -183,13 +183,15 @@ func GetWorkflowRuns(
 
 			nestedRun.Jobs = jobs
 
-			tests, err := GetTestsuitesForWorkflowRun(ctx, logger, client, &run, allowTestConclusions)
-			if err != nil {
-				return nil, err
-			}
+			if includeTestsuites {
+				tests, err := GetTestsuitesForWorkflowRun(ctx, logger, client, &run, allowTestConclusions)
+				if err != nil {
+					return nil, err
+				}
 
-			if tests != nil {
-				nestedRun.Tests = *tests
+				if tests != nil {
+					nestedRun.Tests = *tests
+				}
 			}
 
 			workflowRuns = append(workflowRuns, nestedRun)
