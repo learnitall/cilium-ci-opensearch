@@ -32,8 +32,10 @@ type typeWorkflowRunsParams struct {
 }
 
 var (
-	workflowRunsParams = &typeWorkflowRunsParams{}
-	workflowRunsCmd    = &cobra.Command{
+	defaultGitHubConclusions = []string{"success", "failure", "timed_out", "cancelled"}
+	defaultJUnitConclusions  = []string{"passed", "failed", "skipped"}
+	workflowRunsParams       = &typeWorkflowRunsParams{}
+	workflowRunsCmd          = &cobra.Command{
 		Use: "runs",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			s, err := time.Parse(time.DateOnly, workflowRunsParams.SinceStr)
@@ -149,19 +151,19 @@ func init() {
 		"Only pull workflows triggered by the given events",
 	)
 	workflowRunsCmd.PersistentFlags().StringSliceVar(
-		&workflowRunsParams.StepConclusions, "step-conclusions", []string{"failure", "timed_out"},
+		&workflowRunsParams.StepConclusions, "step-conclusions", defaultGitHubConclusions,
 		"Only export steps with one of the given conclusions",
 	)
 	workflowRunsCmd.PersistentFlags().StringSliceVar(
-		&workflowRunsParams.JobConclusions, "job-conclusions", []string{"failure", "timed_out"},
+		&workflowRunsParams.JobConclusions, "job-conclusions", defaultGitHubConclusions,
 		"Only export jobs with one of the given conclusions",
 	)
 	workflowRunsCmd.PersistentFlags().StringSliceVar(
-		&workflowRunsParams.TestConclusions, "test-conclusions", []string{"failed"},
+		&workflowRunsParams.TestConclusions, "test-conclusions", defaultJUnitConclusions,
 		"Only export test cases with one of the given conclusions. Valid options are 'passed', 'skipped', 'failed'.",
 	)
 	workflowRunsCmd.PersistentFlags().StringSliceVar(
-		&workflowRunsParams.RunStatuses, "run-statuses", []string{"failure", "success", "timed_out"},
+		&workflowRunsParams.RunStatuses, "run-statuses", defaultGitHubConclusions,
 		"Only export runs with one of the given conclusions or statuses",
 	)
 	workflowRunsCmd.PersistentFlags().BoolVar(
