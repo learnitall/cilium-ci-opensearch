@@ -107,7 +107,7 @@ jobs:
               -H "Content-Type: application/json" \
               --verbose \
               -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASS }} \
-              ${{ env.OPENSEARCH_URL }}/_bulk \
+              ${{ env.OPENSEARCH_URL }}/_bulk \;
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
