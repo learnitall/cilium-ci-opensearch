@@ -18,7 +18,7 @@ import (
 	"github.com/google/go-github/v60/github"
 	"github.com/jstemmer/go-junit-report/v2/junit"
 
-	"github.com/learnitall/searchgh/pkg/util"
+	"github.com/learnitall/cilium-ci-opensearch/pkg/util"
 )
 
 const PER_PAGE = 100

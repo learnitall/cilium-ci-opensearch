@@ -1,5 +1,5 @@
 {
-  description = "Search GitHub Data";
+  description = "Connector for ingesting Cilium CI data into OpenSearch";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.devshell.url = "github:numtide/devshell";
@@ -25,7 +25,7 @@
           name = "searchgh";
           inherit packages;
           devshell.startup."setprompt" = pkgs.lib.noDepEntry ''
-            export LP_MARK_PREFIX=" (searchgh) "
+            export LP_MARK_PREFIX=" (cilium-ci-opensearch) "
           '';
           devshell.startup."printpackages" = pkgs.lib.noDepEntry ''
             echo "[[ Packages ]]"

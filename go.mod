@@ -1,4 +1,4 @@
-module github.com/learnitall/searchgh
+module github.com/learnitall/cilium-ci-opensearch
 
 go 1.21.7
 

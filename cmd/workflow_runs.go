@@ -10,9 +10,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	gh "github.com/learnitall/searchgh/pkg/github"
-	"github.com/learnitall/searchgh/pkg/log"
-	"github.com/learnitall/searchgh/pkg/opensearch"
+	gh "github.com/learnitall/cilium-ci-opensearch/pkg/github"
+	"github.com/learnitall/cilium-ci-opensearch/pkg/log"
+	"github.com/learnitall/cilium-ci-opensearch/pkg/opensearch"
 )
 
 type typeWorkflowRunsParams struct {
