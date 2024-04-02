@@ -29,6 +29,7 @@ type typeWorkflowRunsParams struct {
 	RunStatuses       []string
 	OnlyFailedSteps   bool
 	IncludeTestsuites bool
+	IncludeErrorLogs  bool
 }
 
 var (
@@ -88,6 +89,7 @@ var (
 						status, event, workflowRunsParams.Since, workflowRunsParams.Until,
 						workflowRunsParams.JobConclusions, workflowRunsParams.StepConclusions,
 						workflowRunsParams.TestConclusions, workflowRunsParams.IncludeTestsuites,
+						workflowRunsParams.IncludeErrorLogs,
 					)
 
 					if err != nil {
@@ -169,6 +171,10 @@ func init() {
 	workflowRunsCmd.PersistentFlags().BoolVar(
 		&workflowRunsParams.IncludeTestsuites, "test-suites", true,
 		"Download, parse and attach JUnit artifacts if available",
+	)
+	workflowRunsCmd.PersistentFlags().BoolVar(
+		&workflowRunsParams.IncludeErrorLogs, "error-logs", true,
+		"Download logs for each job and include relevant error-specific logs",
 	)
 	workflowCmd.AddCommand(workflowRunsCmd)
 }

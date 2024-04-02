@@ -74,6 +74,8 @@ type JobRun struct {
 	CompletedAt time.Time `json:"completed_at,omitempty"`
 	Name        string    `json:"name,omitempty"`
 	Logs        string    `json:"logs,omitempty"`
+	// ErrorLogs contains log lines that contain an error.
+	ErrorLogs []string `json:"errorLogs,omitempty"`
 	// Crumb represents the location the job is found:
 	// workflow_name/job_name
 	Crumb    string        `json:"crumb,omitempty"`

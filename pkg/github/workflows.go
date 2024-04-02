@@ -38,6 +38,7 @@ func GetWorkflowRuns(
 	allowedStepConclucions []string,
 	allowTestConclusions []string,
 	includeTestsuites bool,
+	includeErrorLogs bool,
 ) ([]NestedWorkflowRun, error) {
 	baseLogger := logger.With(
 		"repoOwner", repoOwner,
@@ -176,7 +177,7 @@ func GetWorkflowRuns(
 				WorkflowRun: run,
 			}
 
-			jobs, err := GetJobsForRun(ctx, logger, client, &run, allowedJobConclucions, allowedStepConclucions)
+			jobs, err := GetJobsForRun(ctx, logger, client, &run, allowedJobConclucions, allowedStepConclucions, includeErrorLogs)
 			if err != nil {
 				return nil, err
 			}
@@ -461,9 +462,10 @@ func GetLogsForJob(
 	repoOwner string,
 	repoName string,
 ) (string, error) {
-	logger.Info("Pulling logs for job", "job-id", job.GetID())
+	l := logger.With("job-id", job.GetID())
+	l.Info("Pulling logs for job")
 
-	logURL, _, err := WrapWithRateLimitRetry[url.URL](
+	logURL, logURLResp, err := WrapWithRateLimitRetry[url.URL](
 		ctx, logger,
 		func() (*url.URL, *github.Response, error) {
 			return client.Actions.GetWorkflowJobLogs(
@@ -471,7 +473,14 @@ func GetLogsForJob(
 			)
 		},
 	)
+
 	if err != nil {
+		if logURLResp.StatusCode == 410 {
+			l.Warn("Logs for workflow run are unavailable, received status 410 Gone")
+
+			return "", nil
+		}
+
 		return "", fmt.Errorf("unable to get log URL for job with ID %d: %w", job.ID, err)
 	}
 
@@ -497,6 +506,7 @@ func GetJobsForRun(
 	run *WorkflowRun,
 	allowedConclusions []string,
 	allowedStepConclusions []string,
+	includeErrorLogs bool,
 ) ([]NestedJobRun, error) {
 	l := logger.With("run-id", run.ID)
 
@@ -557,9 +567,28 @@ func GetJobsForRun(
 				run.Repository.Owner.Login, run.Repository.Name, run.ID, job.ID,
 			)
 
+			if job.Conclusion != "success" && includeErrorLogs {
+				logs, err := GetLogsForJob(ctx, logger, client, jobRaw, run.Repository.Owner.Login, run.Repository.Name)
+				if err != nil {
+					return nil, err
+				}
+
+				if logs != "" {
+					job.ErrorLogs = []string{}
+
+					lines := strings.Split(logs, "\n")
+					for _, line := range lines {
+						if strings.Contains(line, "level=error") || strings.Contains(line, "❌") || strings.Contains(line, "🟥") {
+							job.ErrorLogs = append(job.ErrorLogs, line)
+						}
+					}
+				}
+			}
+
 			nestedJob := NestedJobRun{
 				JobRun: job,
 			}
+
 			nestedJob.Steps = GetStepsForJob(ctx, logger, jobRaw, job.Crumb, allowedStepConclusions)
 
 			jobRuns = append(jobRuns, nestedJob)
