@@ -104,14 +104,16 @@ jobs:
       - name: Perform bulk requests
         working-directory: ./splits
         run: |
-          find . -exec \
+          set -x
+          for fn in ./*; do
             curl -XPOST \
-              --data-binary @{} \
-              --output {}-response.json \
+              --data-binary @$fn \
+              --output $fn-response.json \
               -H "Content-Type: application/json" \
               --verbose \
               -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASS }} \
-              ${{ env.OPENSEARCH_URL }}/_bulk \;
+              ${{ vars.OPENSEARCH_URL }}/_bulk
+          done
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
