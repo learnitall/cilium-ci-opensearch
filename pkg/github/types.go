@@ -103,29 +103,29 @@ type StepRun struct {
 // ease-of-use in OpenSearch.
 
 type Testcase struct {
-	Name     string        `json:"name"`
-	Duration time.Duration `json:"duration"`
-	Status   string        `json:"status"`
+	Name     string        `json:"name,omitempty"`
+	Duration time.Duration `json:"duration,omitempty"`
+	Status   string        `json:"status,omitempty"`
 }
 
 type Test struct {
-	Name             string        `json:"name"`
-	TotalTests       int           `json:"totalTests"`
-	TotalFailures    int           `json:"totalFailures"`
-	TotalErrors      int           `json:"totalErrors"`
-	TotalSkipped     int           `json:"totalSkipped"`
-	Duration         time.Duration `json:"duration"`
-	EndTime          time.Time     `json:"endTime"`
-	WorkflowStepName string        `json:"workflowStepName"`
+	Name             string        `json:"name,omitempty"`
+	TotalTests       int           `json:"totalTests,omitempty"`
+	TotalFailures    int           `json:"totalFailures,omitempty"`
+	TotalErrors      int           `json:"totalErrors,omitempty"`
+	TotalSkipped     int           `json:"totalSkipped,omitempty"`
+	Duration         time.Duration `json:"duration,omitempty"`
+	EndTime          time.Time     `json:"endTime,omitempty"`
+	WorkflowStepName string        `json:"workflowStepName,omitempty"`
 
 	Testcases []Testcase `json:"testCases,omitempty"`
 }
 
 type Tests struct {
-	Duration      time.Duration `json:"duration"`
-	TotalTests    int           `json:"totalTests"`
-	TotalErrors   int           `json:"totalErrors"`
-	TotalFailures int           `json:"totalFailures"`
-	TotalSkipped  int           `json:"totalSkipped"`
+	Duration      time.Duration `json:"duration,omitempty"`
+	TotalTests    int           `json:"totalTests,omitempty"`
+	TotalErrors   int           `json:"totalErrors,omitempty"`
+	TotalFailures int           `json:"totalFailures,omitempty"`
+	TotalSkipped  int           `json:"totalSkipped,omitempty"`
 	Tests         []Test        `json:"tests,omitempty"`
 }
