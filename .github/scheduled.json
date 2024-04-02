@@ -1,0 +1,26 @@
+{
+    "include": [
+        {
+            "name": "cilium-cilium-push-events-main",
+            "repository": "cilium/cilium",
+            "branch": "main",
+            "events": "push",
+            "run_statuses": "failure,success,timed_out",
+            "job_conclusions": "failure,timed_out",
+            "step_conclusions": "failure,timed_out",
+            "test_conclusions": "failed",
+            "test_suites": true
+        },
+        {
+            "name": "cilium-ciliumcli-push-events-main",
+            "repository": "cilium/cilium-cli",
+            "branch": "main",
+            "events": "push",
+            "run_statuses": "failure,success,timed_out",
+            "job_conclusions": "failure,timed_out",
+            "step_conclusions": "failure,timed_out",
+            "test_conclusions": "failed",
+            "test_suites": true
+        }
+    ]
+}

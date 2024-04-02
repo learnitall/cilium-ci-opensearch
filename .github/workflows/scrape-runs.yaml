@@ -1,0 +1,139 @@
+name: Scrape and Index Workflow Runs
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      name:
+        required: true
+        type: string
+      repository:
+        required: true
+        type: string
+        default: "cilium/cilium"
+      branch:
+        required: true
+        type: string
+        default: main
+      until:
+        required: true
+        type: string
+      since:
+        required: true
+        type: string
+      events:
+        required: false
+        type: string
+        default: push
+      run_statuses:
+        required: false
+        type: string
+        default: failure,success,timed_out
+      job_conclusions:
+        required: false
+        type: string
+        default: failure,timed_out
+      step_conclusions:
+        required: false
+        type: string
+        default: failure,timed_out
+      test_conclusions:
+        required: false
+        type: string
+        default: failed
+      test_suites:
+        required: false
+        type: boolean
+        default: true
+      
+env:
+  TARGET_INDEX: runs-oss
+
+jobs:
+  setup-matrix:
+    runs-on: ubuntu-22.04
+    id: setup-matrix
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - if: ${{ github.event_name == 'workflow_dispatch' }}
+        name: Prepare workflow_dispatch inputs
+        run: |
+          echo matrix='{"include": ${{ toJSON(inputs) }} }' >> $GITHUB_OUTPUT
+      - if: ${{ github.event_name == 'schedule' }}
+        name: Clone scheduled inputs
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/scheduled.json
+      - if: ${{ github.event_name == 'schedule' }}
+        name: Prepare scheduled inputs
+        id: set-matrix
+        run: |
+          today=$(date -d '-1 day' '+%Y-%m-%d')
+          m=$(jq -c '.include |= map(. + {"until": "'$today'", "since": "'$today'"})' < ./.github/scheduled.json)
+          echo "matrix=$m" >> $GITHUB_OUTPUT
+      - if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        run: |
+          exit 1
+    
+  scrape-and-index:
+    needs: setup-matrix
+    strategy:
+      # GitHub API doesn't like concurrent requests.
+      # Additionally, since our token is limited in the
+      # number of requests we can make, just do one
+      # repository at a time. If it takes longer that's ok
+      # since it reduces the chance we run into a limit.
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Echo Matrix
+        run: |
+          echo '${{ toJSON(matrix) }}'
+      - name: Scrape Workflow Runs
+        run: |
+          go run . workflow runs \
+            --repository ${{ matrix.repository }} \
+            --branch ${{ matrix.branch }} \
+            --until ${{ matrix.until }} \
+            --since ${{ matrix.since }} \
+            --events ${{ matrix.event }} \
+            --run-statuses ${{ matrix.run_statuses }} \
+            --job-conclusions ${{ matrix.job_conclusions }} \
+            --step-conclusions ${{ matrix.step_conclusions }} \
+            --test-conclusions ${{ matrix.test_conclusions }} \
+            --test-suites ${{ matrix.test_suites }} \
+            --index ${{ env.TARGET_INDEX }} \
+            --verbose > results.json
+      - name: Create splits
+        run: |
+          mkdir splits
+          cd splits
+          split -l 200 ../results.json
+          ls -lah
+          cd ..
+      - name: Perform bulk requests
+        working-directory: ./splits
+        run: |
+          find . -exec \
+            curl -XPOST \
+              --data-binary @{} \
+              --output {}-response.json \
+              -H "Content-Type: application/json" \
+              --verbose \
+              -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASS }} \
+              ${{ env.OPENSEARCH_URL }}/_bulk \
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: "splits/**"
+      - name: Fail if any items failed to index
+        working-directory: ./splits
+        run: |
+          cat *.json | jq --exit-status '.errors | not'
+
