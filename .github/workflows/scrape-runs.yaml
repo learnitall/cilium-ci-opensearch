@@ -33,14 +33,15 @@ env:
 jobs:
   setup-matrix:
     runs-on: ubuntu-22.04
-    id: setup-matrix
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - if: ${{ github.event_name == 'workflow_dispatch' }}
         name: Prepare workflow_dispatch inputs
+        env:
+          INPUTS_JSON: ${{ toJSON(inputs) }}
         run: |
-          echo matrix='{"include": ${{ toJSON(inputs) }} }' >> $GITHUB_OUTPUT
+          echo $INPUTS_JSON | jq -c '{ "include": [.] }' > /tmp/matrix.json
       - if: ${{ github.event_name == 'schedule' }}
         name: Clone scheduled inputs
         uses: actions/checkout@v4
@@ -49,14 +50,17 @@ jobs:
             .github/scheduled.json
       - if: ${{ github.event_name == 'schedule' }}
         name: Prepare scheduled inputs
-        id: set-matrix
         run: |
           today=$(date -d '-1 day' '+%Y-%m-%d')
           m=$(jq -c '.include |= map(. + {"until": "'$today'", "since": "'$today'"})' < ./.github/scheduled.json)
-          echo "matrix=$m" >> $GITHUB_OUTPUT
+          echo $m > /tmp/matrix.json
       - if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         run: |
           exit 1
+      - id: set-matrix
+        run: |
+          cat /tmp/matrix.json
+          echo "matrix=$(cat /tmp/matrix.json)" >> $GITHUB_OUTPUT
     
   scrape-and-index:
     needs: setup-matrix
@@ -75,13 +79,15 @@ jobs:
         run: |
           echo '${{ toJSON(matrix) }}'
       - name: Scrape Workflow Runs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           go run . workflow runs \
             --repository ${{ matrix.repository }} \
             --branch ${{ matrix.branch }} \
             --until ${{ matrix.until }} \
             --since ${{ matrix.since }} \
-            --events ${{ matrix.event }} \
+            --events ${{ matrix.events }} \
             --index ${{ env.TARGET_INDEX }} \
             --verbose > results.json
       - name: Create splits
