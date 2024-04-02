@@ -30,6 +30,10 @@ on:
 env:
   TARGET_INDEX: runs-oss
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   setup-matrix:
     runs-on: ubuntu-22.04
