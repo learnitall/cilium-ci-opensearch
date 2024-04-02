@@ -2,10 +2,12 @@ package github
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	ratelimit "github.com/gofri/go-github-ratelimit/github_ratelimit"
@@ -37,6 +39,20 @@ func WrapWithRateLimitRetry[T any](
 	} else if _, ok := err.(*github.RateLimitError); ok {
 		// Give an extra minute for padding
 		retryAfter = time.Until(resp.Rate.Reset.Time) + time.Minute
+		typ = "primary"
+	} else if resp.StatusCode == 403 {
+		retryAfterHeader := resp.Header.Get("X-Ratelimit-Reset")
+		if retryAfterHeader == "" {
+			return result, resp, err
+		}
+
+		retryAfterSec, e := strconv.ParseInt(retryAfterHeader, 10, 64)
+		if e != nil {
+			err = errors.Join(err, e)
+			return result, resp, err
+		}
+
+		retryAfter = time.Until(time.Unix(retryAfterSec, 0))
 		typ = "primary"
 	} else {
 		return result, resp, err
