@@ -32,7 +32,7 @@ type typeWorkflowRunsParams struct {
 }
 
 var (
-	defaultGitHubConclusions = []string{"success", "failure", "timed_out", "cancelled"}
+	defaultGitHubConclusions = []string{"success", "failure", "timed_out", "cancelled", "skipped"}
 	defaultJUnitConclusions  = []string{"passed", "failed", "skipped"}
 	workflowRunsParams       = &typeWorkflowRunsParams{}
 	workflowRunsCmd          = &cobra.Command{
