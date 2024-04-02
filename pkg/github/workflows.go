@@ -498,7 +498,7 @@ func GetJobsForRun(
 ) ([]NestedJobRun, error) {
 	l := logger.With("run-id", run.ID)
 
-	l.Debug("Pulling jobs for workflow run")
+	l.Info("Pulling jobs for workflow run")
 
 	jobOpts := &github.ListOptions{
 		PerPage: PER_PAGE,
