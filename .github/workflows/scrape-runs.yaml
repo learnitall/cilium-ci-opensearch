@@ -26,26 +26,6 @@ on:
         required: false
         type: string
         default: push
-      run_statuses:
-        required: false
-        type: string
-        default: failure,success,timed_out
-      job_conclusions:
-        required: false
-        type: string
-        default: failure,timed_out
-      step_conclusions:
-        required: false
-        type: string
-        default: failure,timed_out
-      test_conclusions:
-        required: false
-        type: string
-        default: failed
-      test_suites:
-        required: false
-        type: boolean
-        default: true
       
 env:
   TARGET_INDEX: runs-oss
@@ -102,11 +82,6 @@ jobs:
             --until ${{ matrix.until }} \
             --since ${{ matrix.since }} \
             --events ${{ matrix.event }} \
-            --run-statuses ${{ matrix.run_statuses }} \
-            --job-conclusions ${{ matrix.job_conclusions }} \
-            --step-conclusions ${{ matrix.step_conclusions }} \
-            --test-conclusions ${{ matrix.test_conclusions }} \
-            --test-suites ${{ matrix.test_suites }} \
             --index ${{ env.TARGET_INDEX }} \
             --verbose > results.json
       - name: Create splits
