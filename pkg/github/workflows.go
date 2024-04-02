@@ -397,15 +397,6 @@ func GetTestsuitesForWorkflowRun(
 		}
 
 		for _, testcase := range suite.Testcases {
-			if !util.Contains(allowedTestConclusions, testcase.Status) {
-				l.Debug(
-					"Skipping test case for workflow, does not meet status criteria",
-					"testcase-name", testcase.Name, "testcase-status", testcase.Status,
-				)
-
-				continue
-			}
-
 			tc := Testcase{
 				Name: testcase.Name,
 			}
@@ -427,6 +418,15 @@ func GetTestsuitesForWorkflowRun(
 				} else {
 					tc.Status = "passed"
 				}
+			}
+
+			if !util.Contains(allowedTestConclusions, tc.Status) {
+				l.Debug(
+					"Skipping test case for workflow, does not meet status criteria",
+					"testcase-name", testcase.Name, "testcase-status", testcase.Status,
+				)
+
+				continue
 			}
 
 			if testcase.Time != "" {
