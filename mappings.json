@@ -1,0 +1,543 @@
+{
+  "properties": {
+    "actor": {
+      "type": "nested",
+      "properties": {
+        "id": {
+          "type": "long"
+        },
+        "login": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        },
+        "node_id": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        }
+      }
+    },
+    "artifacts_url": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "conclusion": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "created_at": {
+      "type": "date"
+    },
+    "display_title": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "event": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "head_branch": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "head_commit": {
+      "type": "nested",
+      "properties": {
+        "author": {
+          "type": "nested",
+          "properties": {
+            "email": {
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              },
+              "type": "text"
+            },
+            "name": {
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              },
+              "type": "text"
+            }
+          }
+        },
+        "message": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text",
+          "term_vector": "with_positions_offsets_payloads"
+        }
+      }
+    },
+    "head_sha": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "id": {
+      "type": "long"
+    },
+    "jobs": {
+      "type": "nested",
+      "properties": {
+        "completed_at": {
+          "type": "date"
+        },
+        "conclusion": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        },
+        "created_at": {
+          "type": "date"
+        },
+        "crumb": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        },
+        "duration": {
+          "type": "long"
+        },
+        "errorLogs": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text",
+          "term_vector": "with_positions_offsets_payloads"
+        },
+        "id": {
+          "type": "long"
+        },
+        "link": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        },
+        "name": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text",
+          "term_vector": "with_positions_offsets_payloads"
+        },
+        "node_id": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        },
+        "run_id": {
+          "type": "long"
+        },
+        "run_url": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        },
+        "started_at": {
+          "type": "date"
+        },
+        "status": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        },
+        "steps": {
+          "type": "nested",
+          "properties": {
+            "completed_at": {
+              "type": "date"
+            },
+            "conclusion": {
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              },
+              "type": "text"
+            },
+            "crumb": {
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              },
+              "type": "text"
+            },
+            "name": {
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              },
+              "type": "text",
+              "term_vector": "with_positions_offsets_payloads"
+            },
+            "number": {
+              "type": "long"
+            },
+            "started_at": {
+              "type": "date"
+            },
+            "status": {
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              },
+              "type": "text"
+            }
+          }
+        },
+        "url": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        }
+      }
+    },
+    "jobs_url": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "link": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "logs_url": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "name": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text",
+      "term_vector": "with_positions_offsets_payloads"
+    },
+    "node_id": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "repository": {
+      "type": "nested",
+      "properties": {
+        "full_name": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        },
+        "id": {
+          "type": "long"
+        },
+        "name": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        },
+        "node_id": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        },
+        "owner": {
+          "type": "nested",
+          "properties": {
+            "id": {
+              "type": "long"
+            },
+            "login": {
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              },
+              "type": "text"
+            },
+            "node_id": {
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              },
+              "type": "text"
+            }
+          }
+        }
+      }
+    },
+    "run_attempt": {
+      "type": "long"
+    },
+    "run_number": {
+      "type": "long"
+    },
+    "run_started_at": {
+      "type": "date"
+    },
+    "status": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "tests": {
+      "type": "nested",
+      "properties": {
+        "duration": {
+          "type": "long"
+        },
+        "tests": {
+          "type": "nested",
+          "properties": {
+            "duration": {
+              "type": "long"
+            },
+            "endTime": {
+              "type": "date"
+            },
+            "name": {
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              },
+              "type": "text",
+              "term_vector": "with_positions_offsets_payloads"
+            },
+            "testCases": {
+              "type": "nested",
+              "properties": {
+                "duration": {
+                  "type": "long"
+                },
+                "name": {
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  },
+                  "type": "text",
+                  "term_vector": "with_positions_offsets_payloads"
+                },
+                "status": {
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  },
+                  "type": "text"
+                }
+              }
+            },
+            "totalErrors": {
+              "type": "long"
+            },
+            "totalErros": {
+              "type": "long"
+            },
+            "totalFailures": {
+              "type": "long"
+            },
+            "totalSkipped": {
+              "type": "long"
+            },
+            "totalTests": {
+              "type": "long"
+            },
+            "workflowStepName": {
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              },
+              "type": "text"
+            }
+          }
+        },
+        "totalErrors": {
+          "type": "long"
+        },
+        "totalFailures": {
+          "type": "long"
+        },
+        "totalSkipped": {
+          "type": "long"
+        },
+        "totalTests": {
+          "type": "long"
+        }
+      }
+    },
+    "triggering_actor": {
+      "type": "nested",
+      "properties": {
+        "id": {
+          "type": "long"
+        },
+        "login": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        },
+        "node_id": {
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          },
+          "type": "text"
+        }
+      }
+    },
+    "updated_at": {
+      "type": "date"
+    },
+    "url": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "workflow_id": {
+      "type": "long"
+    }
+  }
+}
