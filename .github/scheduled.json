@@ -7,10 +7,10 @@
             "events": "push"
         },
         {
-            "name": "cilium-ciliumcli-push-events-main",
+            "name": "cilium-ciliumcli-schedule-events-main",
             "repository": "cilium/cilium-cli",
             "branch": "main",
-            "events": "push"
+            "events": "schedule"
         }
     ]
 }
