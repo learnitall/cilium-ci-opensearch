@@ -23,6 +23,9 @@ import (
 
 const PER_PAGE = 100
 
+// GetWorkflowRuns returns a list of workflow runs as determined by the given arguments.
+// These workflows can be passed to other functions to retrieve sub-objects, such jobs
+// and steps.
 func GetWorkflowRuns(
 	ctx context.Context,
 	logger *slog.Logger,
@@ -34,12 +37,7 @@ func GetWorkflowRuns(
 	event string,
 	since time.Time,
 	until time.Time,
-	allowedJobConclucions []string,
-	allowedStepConclucions []string,
-	allowTestConclusions []string,
-	includeTestsuites bool,
-	includeErrorLogs bool,
-) ([]NestedWorkflowRun, error) {
+) ([]WorkflowRun, error) {
 	baseLogger := logger.With(
 		"repoOwner", repoOwner,
 		"repoName", repoName,
@@ -48,7 +46,8 @@ func GetWorkflowRuns(
 		"until", until,
 	)
 
-	workflowRuns := []NestedWorkflowRun{}
+	workflowRuns := []WorkflowRun{}
+
 	runOpts := github.ListOptions{
 		PerPage: PER_PAGE,
 	}
@@ -97,25 +96,26 @@ func GetWorkflowRuns(
 
 		for _, runRaw := range runs.WorkflowRuns {
 			run := WorkflowRun{
-				ID:           runRaw.GetID(),
-				Name:         runRaw.GetName(),
-				NodeID:       runRaw.GetNodeID(),
-				HeadBranch:   runRaw.GetHeadBranch(),
-				HeadSHA:      runRaw.GetHeadSHA(),
-				RunNumber:    runRaw.GetRunNumber(),
-				RunAttempt:   runRaw.GetRunAttempt(),
-				Event:        runRaw.GetEvent(),
-				DisplayTitle: runRaw.GetDisplayTitle(),
-				Status:       runRaw.GetStatus(),
-				Conclusion:   runRaw.GetConclusion(),
-				WorkflowID:   runRaw.GetWorkflowID(),
-				URL:          runRaw.GetURL(),
-				CreatedAt:    runRaw.CreatedAt.Time,
-				UpdatedAt:    runRaw.UpdatedAt.Time,
-				RunStartedAt: runRaw.RunStartedAt.Time,
-				JobsURL:      runRaw.GetJobsURL(),
-				LogsURL:      runRaw.GetLogsURL(),
-				ArtifactsURL: runRaw.GetArtifactsURL(),
+				Type:             TypeNameWorkflowRun,
+				ID:               runRaw.GetID(),
+				Name:             runRaw.GetName(),
+				NodeID:           runRaw.GetNodeID(),
+				HeadBranch:       runRaw.GetHeadBranch(),
+				HeadSHA:          runRaw.GetHeadSHA(),
+				RunNumber:        runRaw.GetRunNumber(),
+				RunAttempt:       runRaw.GetRunAttempt(),
+				Event:            runRaw.GetEvent(),
+				DisplayTitle:     runRaw.GetDisplayTitle(),
+				Status:           runRaw.GetStatus(),
+				Conclusion:       runRaw.GetConclusion(),
+				ParentWorkflowID: runRaw.GetWorkflowID(),
+				URL:              runRaw.GetURL(),
+				CreatedAt:        runRaw.CreatedAt.Time,
+				UpdatedAt:        runRaw.UpdatedAt.Time,
+				RunStartedAt:     runRaw.RunStartedAt.Time,
+				JobsURL:          runRaw.GetJobsURL(),
+				LogsURL:          runRaw.GetLogsURL(),
+				ArtifactsURL:     runRaw.GetArtifactsURL(),
 			}
 
 			rawRunHeadCommit := runRaw.GetHeadCommit()
@@ -173,29 +173,7 @@ func GetWorkflowRuns(
 				run.Repository.Owner.Login, run.Repository.Name, run.ID,
 			)
 
-			nestedRun := NestedWorkflowRun{
-				WorkflowRun: run,
-			}
-
-			jobs, err := GetJobsForRun(ctx, logger, client, &run, allowedJobConclucions, allowedStepConclucions, includeErrorLogs)
-			if err != nil {
-				return nil, err
-			}
-
-			nestedRun.Jobs = jobs
-
-			if includeTestsuites {
-				tests, err := GetTestsuitesForWorkflowRun(ctx, logger, client, &run, allowTestConclusions)
-				if err != nil {
-					return nil, err
-				}
-
-				if tests != nil {
-					nestedRun.Tests = *tests
-				}
-			}
-
-			workflowRuns = append(workflowRuns, nestedRun)
+			workflowRuns = append(workflowRuns, run)
 		}
 
 		if runResp.NextPage == 0 {
@@ -208,13 +186,16 @@ func GetWorkflowRuns(
 	return workflowRuns, nil
 }
 
-func GetTestsuitesForWorkflowRun(
+// GetTestsForWorkflowRun checks if the given WorkflowRun contains a known JUnit artifact.
+// If a JUnit file is found and is recognized, it will be downloaded and parsed into a set of TestSuite
+// and Testcase objects.
+func GetTestsForWorkflowRun(
 	ctx context.Context,
 	logger *slog.Logger,
 	client *github.Client,
 	run *WorkflowRun,
 	allowedTestConclusions []string,
-) (*Tests, error) {
+) ([]Testsuite, []Testcase, error) {
 	l := logger.With("run-id", run.ID)
 
 	l.Debug("Pulling artifacts for workflow")
@@ -233,7 +214,7 @@ func GetTestsuitesForWorkflowRun(
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("unable to list artifacts for workflow %d: %w", run.ID, err)
+		return nil, nil, fmt.Errorf("unable to list artifacts for workflow %d: %w", run.ID, err)
 	}
 
 	l.Debug("Checking artifacts for junit file", "count", artifacts.GetTotalCount())
@@ -248,12 +229,12 @@ func GetTestsuitesForWorkflowRun(
 	if junitArtifact == nil {
 		l.Debug("No junit artifact found for workflow run, ignoring")
 
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	tmpFile, err := os.CreateTemp("", fmt.Sprintf("cilium-junits-%d-*", run.ID))
 	if err != nil {
-		return nil, fmt.Errorf("unable to create temp file: %w", err)
+		return nil, nil, fmt.Errorf("unable to create temp file: %w", err)
 	}
 	tmpFilePath := tmpFile.Name()
 	defer func() {
@@ -276,7 +257,7 @@ func GetTestsuitesForWorkflowRun(
 		if downloadURLResp.StatusCode == 410 {
 			l.Warn("Artiftacts for workflow run are unavailable, received status 410 Gone")
 
-			return nil, nil
+			return nil, nil, nil
 		}
 
 		l.Debug("err", "err", err, "status", downloadURLResp.StatusCode, "status-code", downloadURLResp.StatusCode, "equal", downloadURLResp.StatusCode == 200, "body", func() string {
@@ -285,88 +266,40 @@ func GetTestsuitesForWorkflowRun(
 			return string(b)
 		}(), "resp", downloadURLResp.Response)
 
-		return nil, fmt.Errorf("unable to get download url for artifact %d: %w", junitArtifact.GetID(), err)
+		return nil, nil, fmt.Errorf("unable to get download url for artifact %d: %w", junitArtifact.GetID(), err)
 	}
 
 	l.Debug("Downloading cilium-junits artifact", "url", downloadURL, "dest", tmpFilePath)
 
 	resp, err := http.Get(downloadURL.String())
 	if err != nil {
-		return nil, fmt.Errorf("unable to download cilium-junits artifact from %s: %w", downloadURL, err)
+		return nil, nil, fmt.Errorf("unable to download cilium-junits artifact from %s: %w", downloadURL, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(
+		return nil, nil, fmt.Errorf(
 			"unable to download cilium-junits artifact from %s, bad http code: %s", downloadURL, resp.Status,
 		)
 	}
 
 	_, err = io.Copy(tmpFile, resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("unable to write cilium-junits artifact file: %w", err)
+		return nil, nil, fmt.Errorf("unable to write cilium-junits artifact file: %w", err)
 	}
 
 	l.Debug("Successfully downloaded cilium-junits file, reading", "path", tmpFilePath)
 
 	zipReader, err := zip.OpenReader(tmpFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create zip reader for file %s: %w", tmpFilePath, err)
+		return nil, nil, fmt.Errorf("unable to create zip reader for file %s: %w", tmpFilePath, err)
 	}
 	defer zipReader.Close()
 
-	allTests := Tests{}
-	for _, fil := range zipReader.File {
-		if !strings.HasSuffix(fil.Name, ".xml") || fil.FileInfo().IsDir() {
-			l.Debug("ignoring non-xml file in cilium-junits archive", "file", fil.Name)
-			continue
-		}
-
-		l.Info("Parsing JUnit file", "name", fil.Name)
-
-		fileReader, err := fil.Open()
-		if err != nil {
-			return nil, fmt.Errorf("unable to open file in cilium-junits archive for reading: %w", err)
-		}
-		defer fileReader.Close()
-
-		buf := &bytes.Buffer{}
-
-		_, err = io.Copy(buf, fileReader)
-		if err != nil {
-			return nil, fmt.Errorf("unable to read junit file in artifact zip: %w", err)
-		}
-
-		// Sometimes a JUnit file can be empty, so we need to rule out empty files.
-		if buf.Len() == 0 {
-			continue
-		}
-
-		// A JUnit file may either be:
-		// 1. A junit.Testsuites object with a single junit.Testsuite.
-		// 2. A single junit.Testsuite.
-		// Try both options when unmarshalling.
-		// Note that the XML parser thinks the Testsuites object is a valid Testsuite object, so
-		// we have to try parsing into a Testsuites first.
-		suite := junit.Testsuite{}
-		suites := junit.Testsuites{}
-		if err := xml.Unmarshal(buf.Bytes(), &suites); err != nil {
-			if err2 := xml.Unmarshal(buf.Bytes(), &suite); err2 != nil {
-				e := errors.Join(err, err2)
-				return nil, fmt.Errorf("unable to unmarshal junit file '%s' in artifact to Testsuite or Testsuites object: %w", fil.Name, e)
-			}
-		} else {
-			if len(suites.Suites) != 1 {
-				l.Warn("Found Testsuites object with unexpected number of Testsuite objects", "file", fil.Name, "url", junitArtifact.GetURL())
-				l.Debug("Found Testsuites object with unexpected number of Testsuite objects", "testsuites", suites)
-
-				continue
-			}
-
-			suite = suites.Suites[0]
-		}
-
-		test := &Test{
+	parseTestsuite := func(suite *junit.Testsuite) (*Testsuite, []Testcase, error) {
+		s := &Testsuite{
+			WorkflowRun:   *run,
+			Type:          TypeNameTestsuite,
 			Name:          suite.Name,
 			TotalTests:    suite.Tests,
 			TotalFailures: suite.Failures,
@@ -377,31 +310,30 @@ func GetTestsuitesForWorkflowRun(
 		if suite.Time != "" {
 			duration, err := time.ParseDuration(fmt.Sprintf("%ss", suite.Time))
 			if err != nil {
-				return nil, fmt.Errorf("unable to parse duration '%ss': %w", suite.Time, err)
+				return nil, nil, fmt.Errorf("unable to parse duration '%ss': %w", suite.Time, err)
 			}
-			test.Duration = duration
+			s.Duration = duration
 		}
 
 		if suite.Timestamp != "" {
-			// ISO8601
-			endTime, err := time.Parse("2006-01-02T15:04:05", suite.Timestamp)
+			// ISO8601.
+			// Some timestamps have a "Z" at the end, and some don't.
+			// The time package complains if the given time to parse doesn't exactly
+			// match the given format, therefore we need to trim the Z if it's in the timestamp.
+			endTime, err := time.Parse("2006-01-02T15:04:05", strings.TrimSuffix(suite.Timestamp, "Z"))
 			if err != nil {
-				return nil, fmt.Errorf("unable to parse timestamp '%s': %w", suite.Timestamp, err)
+				return nil, nil, fmt.Errorf("unable to parse timestamp '%s': %w", suite.Timestamp, err)
 			}
-			test.EndTime = endTime
+			s.EndTime = endTime
 		}
 
-		if suite.Properties != nil {
-			for _, property := range *suite.Properties {
-				if property.Name == "github_job_step" {
-					test.WorkflowStepName = property.Value
-				}
-			}
-		}
+		cases := []Testcase{}
 
 		for _, testcase := range suite.Testcases {
 			tc := Testcase{
-				Name: testcase.Name,
+				Testsuite: *s,
+				Type:      TypeNameTestcase,
+				Name:      testcase.Name,
 			}
 
 			// There are a couple of formats for the cilium-junits. Sometimes
@@ -435,41 +367,99 @@ func GetTestsuitesForWorkflowRun(
 			if testcase.Time != "" {
 				duration, err := time.ParseDuration(fmt.Sprintf("%ss", testcase.Time))
 				if err != nil {
-					return nil, fmt.Errorf("unable to parse duration '%ss': %w", testcase.Time, err)
+					return nil, nil, fmt.Errorf("unable to parse duration '%ss': %w", testcase.Time, err)
 				}
 				tc.Duration = duration
 			}
 
-			test.Testcases = append(test.Testcases, tc)
+			cases = append(cases, tc)
 		}
 
-		allTests.TotalTests += test.TotalTests
-		allTests.TotalErrors += test.TotalErrors
-		allTests.TotalFailures += test.TotalFailures
-		allTests.TotalSkipped += test.TotalSkipped
-		allTests.Tests = append(allTests.Tests, *test)
+		return s, cases, nil
 	}
 
-	return &allTests, nil
+	suites := []Testsuite{}
+	cases := []Testcase{}
+
+	for _, fil := range zipReader.File {
+		if !strings.HasSuffix(fil.Name, ".xml") || fil.FileInfo().IsDir() {
+			l.Debug("ignoring non-xml file in cilium-junits archive", "file", fil.Name)
+			continue
+		}
+
+		l.Info("Parsing JUnit file", "name", fil.Name)
+
+		fileReader, err := fil.Open()
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to open file in cilium-junits archive for reading: %w", err)
+		}
+		defer fileReader.Close()
+
+		buf := &bytes.Buffer{}
+
+		_, err = io.Copy(buf, fileReader)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to read junit file in artifact zip: %w", err)
+		}
+
+		// Sometimes a JUnit file can be empty, so we need to rule out empty files.
+		if buf.Len() == 0 {
+			continue
+		}
+
+		// A JUnit file may either be:
+		// 1. A junit.Testsuites object with multiple junit.Testsuite objects.
+		// 2. A junit.Testsuites object with a single junit.Testsuite object.
+		// 3. A single junit.Testsuite.
+		// Try all options when unmarshalling.
+		// Note that the XML parser thinks the Testsuites object is a valid Testsuite object, so
+		// we have to try parsing into a Testsuites first.
+		toParse := []junit.Testsuite{}
+		s := junit.Testsuites{}
+		if err := xml.Unmarshal(buf.Bytes(), &s); err != nil {
+			s := junit.Testsuite{}
+			if err2 := xml.Unmarshal(buf.Bytes(), &s); err2 != nil {
+				e := errors.Join(err, err2)
+				return nil, nil, fmt.Errorf("unable to unmarshal junit file '%s' in artifact to Testsuite or Testsuites object: %w", fil.Name, e)
+			}
+			toParse = append(toParse, s)
+		} else {
+			toParse = s.Suites
+		}
+
+		for _, s := range toParse {
+			parsedSuite, parsedCases, err := parseTestsuite(&s)
+			if err != nil {
+				return nil, nil, fmt.Errorf("unable to parse test suite in junit file '%s': %v", fil.Name, err)
+			}
+
+			suites = append(suites, *parsedSuite)
+			cases = append(cases, parsedCases...)
+		}
+
+	}
+
+	return suites, cases, nil
 
 }
 
-func GetLogsForJob(
+// getLogsForJob returns a string containing the logs for the given job.
+func getLogsForJob(
 	ctx context.Context,
 	logger *slog.Logger,
 	client *github.Client,
-	job *github.WorkflowJob,
+	jobID int64,
 	repoOwner string,
 	repoName string,
 ) (string, error) {
-	l := logger.With("job-id", job.GetID())
+	l := logger.With("job-id", jobID)
 	l.Info("Pulling logs for job")
 
 	logURL, logURLResp, err := WrapWithRateLimitRetry[url.URL](
 		ctx, logger,
 		func() (*url.URL, *github.Response, error) {
 			return client.Actions.GetWorkflowJobLogs(
-				ctx, repoOwner, repoName, job.GetID(), 10,
+				ctx, repoOwner, repoName, jobID, 10,
 			)
 		},
 	)
@@ -481,25 +471,27 @@ func GetLogsForJob(
 			return "", nil
 		}
 
-		return "", fmt.Errorf("unable to get log URL for job with ID %d: %w", job.ID, err)
+		return "", fmt.Errorf("unable to get log URL for job with ID %d: %w", jobID, err)
 	}
 
 	resp, err := http.Get(logURL.String())
 	if err != nil {
-		return "", fmt.Errorf("unable to download logs for job with ID %d: %w", job.ID, err)
+		return "", fmt.Errorf("unable to download logs for job with ID %d: %w", jobID, err)
 	}
 	defer resp.Body.Close()
 
 	buf := bytes.Buffer{}
 	_, err = io.Copy(&buf, resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("unable to read logs for job with ID %d: %w", job.ID, err)
+		return "", fmt.Errorf("unable to read logs for job with ID %d: %w", jobID, err)
 	}
 
 	return buf.String(), nil
 }
 
-func GetJobsForRun(
+// GetJobsAndStepsForRun returns a list of jobs and a list of steps that are contained within the given workflow run.
+// Jobs and Steps must be parsed together due to the way the GitHub API couples them together.
+func GetJobsAndStepsForRun(
 	ctx context.Context,
 	logger *slog.Logger,
 	client *github.Client,
@@ -507,7 +499,7 @@ func GetJobsForRun(
 	allowedConclusions []string,
 	allowedStepConclusions []string,
 	includeErrorLogs bool,
-) ([]NestedJobRun, error) {
+) ([]JobRun, []StepRun, error) {
 	l := logger.With("run-id", run.ID)
 
 	l.Info("Pulling jobs for workflow run")
@@ -516,7 +508,8 @@ func GetJobsForRun(
 		PerPage: PER_PAGE,
 	}
 
-	jobRuns := []NestedJobRun{}
+	jobRuns := []JobRun{}
+	stepRuns := []StepRun{}
 
 	for {
 		jobs, jobResp, err := WrapWithRateLimitRetry[github.Jobs](
@@ -533,7 +526,7 @@ func GetJobsForRun(
 			},
 		)
 		if err != nil {
-			return nil, fmt.Errorf("unable to pull jobs for workflow with ID %d: %w", run.ID, err)
+			return nil, nil, fmt.Errorf("unable to pull jobs for workflow with ID %d: %w", run.ID, err)
 		}
 
 		l.Debug("Processing jobs runs", "total", jobs.GetTotalCount(), "count", len(jobs.Jobs))
@@ -548,6 +541,8 @@ func GetJobsForRun(
 			}
 
 			job := JobRun{
+				WorkflowRun: *run,
+				Type:        TypeNameJobRun,
 				ID:          jobRaw.GetID(),
 				RunID:       jobRaw.GetRunID(),
 				RunURL:      jobRaw.GetRunURL(),
@@ -568,9 +563,9 @@ func GetJobsForRun(
 			)
 
 			if job.Conclusion != "success" && includeErrorLogs {
-				logs, err := GetLogsForJob(ctx, logger, client, jobRaw, run.Repository.Owner.Login, run.Repository.Name)
+				logs, err := getLogsForJob(ctx, logger, client, job.ID, run.Repository.Owner.Login, run.Repository.Name)
 				if err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 
 				if logs != "" {
@@ -585,13 +580,10 @@ func GetJobsForRun(
 				}
 			}
 
-			nestedJob := NestedJobRun{
-				JobRun: job,
-			}
+			jobRuns = append(jobRuns, job)
 
-			nestedJob.Steps = GetStepsForJob(ctx, logger, jobRaw, job.Crumb, allowedStepConclusions)
-
-			jobRuns = append(jobRuns, nestedJob)
+			steps := GetStepsForJob(ctx, logger, jobRaw, &job, job.Crumb, allowedStepConclusions)
+			stepRuns = append(stepRuns, steps...)
 		}
 
 		if jobResp.NextPage == 0 {
@@ -601,22 +593,23 @@ func GetJobsForRun(
 		jobOpts.Page = jobResp.NextPage
 	}
 
-	return jobRuns, nil
+	return jobRuns, stepRuns, nil
 }
 
 func GetStepsForJob(
 	ctx context.Context,
 	logger *slog.Logger,
-	job *github.WorkflowJob,
+	jobRaw *github.WorkflowJob,
+	job *JobRun,
 	crumb string,
 	allowedConclusions []string,
 ) []StepRun {
 	steps := []StepRun{}
 
-	for _, stepRaw := range job.Steps {
+	for _, stepRaw := range jobRaw.Steps {
 		if c := stepRaw.GetConclusion(); !util.Contains(allowedConclusions, c) {
 			logger.Debug("Skipping step for job, does not meet conclusion criteria",
-				"job-id", job.GetID(),
+				"job-id", jobRaw.GetID(),
 				"step-name", stepRaw.GetName(),
 				"step-conclusion", c,
 			)
@@ -624,6 +617,8 @@ func GetStepsForJob(
 		}
 
 		step := StepRun{
+			JobRun:      *job,
+			Type:        TypeNameStepRun,
 			Name:        stepRaw.GetName(),
 			Status:      stepRaw.GetStatus(),
 			Conclusion:  stepRaw.GetConclusion(),

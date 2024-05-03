@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -83,42 +82,92 @@ var (
 
 			for _, event := range workflowRunsParams.Events {
 				for _, status := range workflowRunsParams.RunStatuses {
+					l := logger.With(
+						"event", event,
+						"status", status,
+					)
+
 					runs, err := gh.GetWorkflowRuns(
 						ctx, logger, client,
 						repoOwner, repoName, workflowRunsParams.Branch,
 						status, event, workflowRunsParams.Since, workflowRunsParams.Until,
-						workflowRunsParams.JobConclusions, workflowRunsParams.StepConclusions,
-						workflowRunsParams.TestConclusions, workflowRunsParams.IncludeTestsuites,
-						workflowRunsParams.IncludeErrorLogs,
 					)
-
 					if err != nil {
-						logger.Error(
+						l.Error(
 							"Unable to pull workflow runs",
-							"event", event,
-							"status", status,
+							"err", err,
+						)
+						os.Exit(1)
+					}
+
+					if err := opensearch.BulkWriteObjects[gh.WorkflowRun](runs, rootParams.Index, os.Stdout); err != nil {
+						logger.Error(
+							"Unexepected error while writing workflow run bulk entries",
 							"err", err,
 						)
 						os.Exit(1)
 					}
 
 					for _, run := range runs {
-						data, err := json.Marshal(run)
+						jobs, steps, err := gh.GetJobsAndStepsForRun(
+							ctx, logger, client, &run,
+							workflowRunsParams.JobConclusions,
+							workflowRunsParams.StepConclusions,
+							workflowRunsParams.IncludeErrorLogs,
+						)
 						if err != nil {
-							logger.Error(
-								"Unable to marshal workflow to JSON",
-								"run", run,
+							l.Error(
+								"Unable to pull job and steps for workflow run",
+								"run", run.ID,
 								"err", err,
 							)
 							os.Exit(1)
 						}
 
-						(&opensearch.BulkEntry{
-							Index: rootParams.Index,
-							ID:    run.NodeID,
-							Verb:  "index",
-							Data:  data,
-						}).Write(os.Stdout)
+						if err := opensearch.BulkWriteObjects[gh.JobRun](jobs, rootParams.Index, os.Stdout); err != nil {
+							logger.Error(
+								"Unexepected error while writing job run bulk entries",
+								"err", err,
+							)
+							os.Exit(1)
+						}
+
+						if err := opensearch.BulkWriteObjects[gh.StepRun](steps, rootParams.Index, os.Stdout); err != nil {
+							logger.Error(
+								"Unexepected error while writing step run bulk entries",
+								"err", err,
+							)
+							os.Exit(1)
+						}
+
+						suites, cases, err := gh.GetTestsForWorkflowRun(
+							ctx, logger, client, &run,
+							workflowRunsParams.TestConclusions,
+						)
+						if err != nil {
+							l.Error(
+								"Unable to parse test cases for workflow run",
+								"run", run.ID,
+								"err", err,
+							)
+							os.Exit(1)
+						}
+
+						if err := opensearch.BulkWriteObjects[gh.Testsuite](suites, rootParams.Index, os.Stdout); err != nil {
+							logger.Error(
+								"Unexepected error while writing job run bulk entries",
+								"err", err,
+							)
+							os.Exit(1)
+						}
+
+						if err := opensearch.BulkWriteObjects[gh.Testcase](cases, rootParams.Index, os.Stdout); err != nil {
+							logger.Error(
+								"Unexepected error while writing step run bulk entries",
+								"err", err,
+							)
+							os.Exit(1)
+						}
 					}
 				}
 			}
