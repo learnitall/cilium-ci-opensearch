@@ -84,9 +84,6 @@ type JobRun struct {
 	Logs        string    `json:"job_logs,omitempty"`
 	// ErrorLogs contains log lines that contain an error.
 	ErrorLogs []string `json:"job_error_logs,omitempty"`
-	// Crumb represents the location the job is found:
-	// workflow_name/job_name
-	Crumb    string        `json:"job_crumb,omitempty"`
 	Link     string        `json:"job_link,omitempty"`
 	Duration time.Duration `json:"job_duration,omitempty"`
 }
@@ -101,9 +98,6 @@ type StepRun struct {
 	StartedAt   time.Time     `json:"step_started_at,omitempty"`
 	CompletedAt time.Time     `json:"step_completed_at,omitempty"`
 	Duration    time.Duration `json:"step_duration,omitempty"`
-	// Crump represents the location the job is found:
-	// workflow_naem/job_name/step_name
-	Crumb string `json:"step_crumb,omitempty"`
 }
 
 // The following structs are based off of the structs found in
