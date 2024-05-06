@@ -68,7 +68,7 @@ type WorkflowRun struct {
 }
 
 type JobRun struct {
-	WorkflowRun
+	*WorkflowRun
 	Type        string    `json:"type,omitempty"`
 	ID          int64     `json:"job_id,omitempty"`
 	RunID       int64     `json:"job_run_id,omitempty"`
@@ -89,7 +89,7 @@ type JobRun struct {
 }
 
 type StepRun struct {
-	JobRun
+	*JobRun
 	Type        string        `json:"type,omitempty"`
 	Name        string        `json:"step_name,omitempty"`
 	Status      string        `json:"step_status,omitempty"`
@@ -105,21 +105,21 @@ type StepRun struct {
 // ease-of-use in OpenSearch.
 
 type Testsuite struct {
-	WorkflowRun
-	Type             string        `json:"type,omitempty"`
-	Name             string        `json:"test_suite_name,omitempty"`
-	TotalTests       int           `json:"test_suite_total_tests,omitempty"`
-	TotalFailures    int           `json:"test_suite_total_failures,omitempty"`
-	TotalErrors      int           `json:"test_suite_total_errors,omitempty"`
-	TotalSkipped     int           `json:"test_suite_total_skipped,omitempty"`
-	Duration         time.Duration `json:"test_suite_duration,omitempty"`
-	EndTime          time.Time     `json:"test_suite_end_time,omitempty"`
+	*WorkflowRun
+	Type          string        `json:"type,omitempty"`
+	Name          string        `json:"test_suite_name,omitempty"`
+	TotalTests    int           `json:"test_suite_total_tests,omitempty"`
+	TotalFailures int           `json:"test_suite_total_failures,omitempty"`
+	TotalErrors   int           `json:"test_suite_total_errors,omitempty"`
+	TotalSkipped  int           `json:"test_suite_total_skipped,omitempty"`
+	Duration      time.Duration `json:"test_suite_duration,omitempty"`
+	EndTime       time.Time     `json:"test_suite_end_time,omitempty"`
 }
 
 type Testcase struct {
-	Testsuite
-	Type      string        `json:"type,omitempty"`
-	Name      string        `json:"test_case_name,omitempty"`
-	Duration  time.Duration `json:"test_case_duration,omitempty"`
-	Status    string        `json:"test_case_status,omitempty"`
+	*Testsuite
+	Type     string        `json:"type,omitempty"`
+	Name     string        `json:"test_case_name,omitempty"`
+	Duration time.Duration `json:"test_case_duration,omitempty"`
+	Status   string        `json:"test_case_status,omitempty"`
 }
