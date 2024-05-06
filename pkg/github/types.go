@@ -40,31 +40,32 @@ type Commit struct {
 }
 
 type WorkflowRun struct {
-	Type             string     `json:"type,omitempty"`
-	ID               int64      `json:"workflow_id,omitempty"`
-	Name             string     `json:"workflow_name,omitempty"`
-	NodeID           string     `json:"workflow_node_id,omitempty"`
-	RunNumber        int        `json:"workflow_run_number,omitempty"`
-	RunAttempt       int        `json:"workflow_run_attempt,omitempty"`
-	DisplayTitle     string     `json:"workflow_display_title,omitempty"`
-	Status           string     `json:"workflow_status,omitempty"`
-	Conclusion       string     `json:"workflow_conclusion,omitempty"`
-	ParentWorkflowID int64      `json:"workflow_parent_id,omitempty"`
-	URL              string     `json:"workflow_url,omitempty"`
-	CreatedAt        time.Time  `json:"workflow_created_at,omitempty"`
-	UpdatedAt        time.Time  `json:"workflow_updated_at,omitempty"`
-	RunStartedAt     time.Time  `json:"workflow_run_started_at,omitempty"`
-	JobsURL          string     `json:"workflow_jobs_url,omitempty"`
-	LogsURL          string     `json:"workflow_logs_url,omitempty"`
-	ArtifactsURL     string     `json:"workflow_artifacts_url,omitempty"`
-	Link             string     `json:"workflow_link,omitempty"`
-	Event            string     `json:"event,omitempty"`
-	Actor            User       `json:"actor,omitempty"`
-	TriggeringActor  User       `json:"triggering_actor,omitempty"`
-	Repository       Repository `json:"repository,omitempty"`
-	HeadBranch       string     `json:"head_branch,omitempty"`
-	HeadSHA          string     `json:"head_sha,omitempty"`
-	HeadCommit       Commit     `json:"head_commit,omitempty"`
+	Type                   string            `json:"type,omitempty"`
+	ID                     int64             `json:"workflow_id,omitempty"`
+	Name                   string            `json:"workflow_name,omitempty"`
+	NodeID                 string            `json:"workflow_node_id,omitempty"`
+	RunNumber              int               `json:"workflow_run_number,omitempty"`
+	RunAttempt             int               `json:"workflow_run_attempt,omitempty"`
+	DisplayTitle           string            `json:"workflow_display_title,omitempty"`
+	Status                 string            `json:"workflow_status,omitempty"`
+	Conclusion             string            `json:"workflow_conclusion,omitempty"`
+	ParentWorkflowID       int64             `json:"workflow_parent_id,omitempty"`
+	URL                    string            `json:"workflow_url,omitempty"`
+	CreatedAt              time.Time         `json:"workflow_created_at,omitempty"`
+	UpdatedAt              time.Time         `json:"workflow_updated_at,omitempty"`
+	RunStartedAt           time.Time         `json:"workflow_run_started_at,omitempty"`
+	JobsURL                string            `json:"workflow_jobs_url,omitempty"`
+	LogsURL                string            `json:"workflow_logs_url,omitempty"`
+	ArtifactsURL           string            `json:"workflow_artifacts_url,omitempty"`
+	Link                   string            `json:"workflow_link,omitempty"`
+	Event                  string            `json:"event,omitempty"`
+	Actor                  User              `json:"actor,omitempty"`
+	TriggeringActor        User              `json:"triggering_actor,omitempty"`
+	Repository             Repository        `json:"repository,omitempty"`
+	HeadBranch             string            `json:"head_branch,omitempty"`
+	HeadSHA                string            `json:"head_sha,omitempty"`
+	HeadCommit             Commit            `json:"head_commit,omitempty"`
+	WorkflowDispatchInputs map[string]string `json:"workflow_dispatch_inputs,omitempty"`
 }
 
 type JobRun struct {

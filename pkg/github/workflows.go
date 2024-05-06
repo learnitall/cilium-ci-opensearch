@@ -298,7 +298,7 @@ func GetTestsForWorkflowRun(
 
 	parseTestsuite := func(suite *junit.Testsuite) (*Testsuite, []Testcase, error) {
 		s := &Testsuite{
-			WorkflowRun:   *run,
+			WorkflowRun:   run,
 			Type:          TypeNameTestsuite,
 			Name:          suite.Name,
 			TotalTests:    suite.Tests,
@@ -331,7 +331,7 @@ func GetTestsForWorkflowRun(
 
 		for _, testcase := range suite.Testcases {
 			tc := Testcase{
-				Testsuite: *s,
+				Testsuite: s,
 				Type:      TypeNameTestcase,
 				Name:      testcase.Name,
 			}
@@ -443,8 +443,8 @@ func GetTestsForWorkflowRun(
 
 }
 
-// getLogsForJob returns a string containing the logs for the given job.
-func getLogsForJob(
+// GetLogsForJob returns a string containing the logs for the given job.
+func GetLogsForJob(
 	ctx context.Context,
 	logger *slog.Logger,
 	client *github.Client,
@@ -487,6 +487,82 @@ func getLogsForJob(
 	}
 
 	return buf.String(), nil
+}
+
+func ParseEchoInputsLogs(logs string) map[string]string {
+	// The inputs are echoed as a mutli-line JSON object.
+	// Example:
+	// 2024-05-03T16:34:37.3793382Z Complete job name: Echo Workflow Dispatch Inputs
+	// 2024-05-03T16:34:37.4910244Z ##[group]Run echo '{
+	// 2024-05-03T16:34:37.4910816Z [36;1mecho '{[0m
+	// 2024-05-03T16:34:37.4911353Z [36;1m  "PR-number": "31145",[0m
+	// 2024-05-03T16:34:37.4912034Z [36;1m  "SHA": "2d850639650c52d5be3ec7feb1a7e33cd99566c5",[0m
+	// 2024-05-03T16:34:37.4912678Z [36;1m  "context-ref": "main",[0m
+	// 2024-05-03T16:34:37.4913253Z [36;1m  "extra-args": "{}"[0m
+	// 2024-05-03T16:34:37.4913758Z [36;1m}'[0m
+	// 2024-05-03T16:34:37.5474074Z shell: /usr/bin/bash -e {0}
+	// 2024-05-03T16:34:37.5474692Z env:
+	// 2024-05-03T16:34:37.5475032Z   cilium_cli_ci_version:
+	// 2024-05-03T16:34:37.5475591Z ##[endgroup]
+	// 2024-05-03T16:34:37.5877710Z {
+	// 2024-05-03T16:34:37.5878378Z   "PR-number": "31145",
+	// 2024-05-03T16:34:37.5879820Z   "SHA": "2d850639650c52d5be3ec7feb1a7e33cd99566c5",
+	// 2024-05-03T16:34:37.5880686Z   "context-ref": "main",
+	// 2024-05-03T16:34:37.5881137Z   "extra-args": "{}"
+	// 2024-05-03T16:34:37.5881540Z }
+	// 2024-05-03T16:34:37.6151762Z Cleaning up orphan processes
+	inputs := map[string]string{}
+
+	var inGroup bool
+	var afterGroup bool
+
+	lines := strings.Split(logs, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		parts := strings.Split(line, " ")
+
+		// Ignore lines we don't care about.
+		if !(len(parts) >= 2) {
+			continue
+		}
+
+		// First part is the timestamp.
+		parts = parts[1:]
+
+		if afterGroup {
+			if parts[0] == "{" {
+				// Beginning of the json object
+				continue
+			} else if parts[0] == "}" {
+				// End of the json object
+				break
+			}
+
+			// The key value pairs are printed with a three spaces
+			// after the timestamp and before the key, therefore strings.Split
+			// will add two empty entries in the returned slice:
+			// 2024-05-03T16:34:37.5878378Z   "PR-number": "31145",
+			parts = parts[2:]
+
+			key := strings.Trim(parts[0], "\":")
+			value := strings.Trim(parts[1], "\",")
+
+			inputs[key] = value
+		}
+
+		if parts[0] == "##[endgroup]" && inGroup {
+			afterGroup = true
+			continue
+		}
+
+		if len(parts) >= 2 && parts[0] == "##[group]Run" && parts[1] == "echo" {
+			inGroup = true
+			continue
+		}
+	}
+
+	return inputs
 }
 
 // GetJobsAndStepsForRun returns a list of jobs and a list of steps that are contained within the given workflow run.
@@ -541,7 +617,7 @@ func GetJobsAndStepsForRun(
 			}
 
 			job := JobRun{
-				WorkflowRun: *run,
+				WorkflowRun: run,
 				Type:        TypeNameJobRun,
 				ID:          jobRaw.GetID(),
 				RunID:       jobRaw.GetRunID(),
@@ -556,14 +632,13 @@ func GetJobsAndStepsForRun(
 				Name:        jobRaw.GetName(),
 				Duration:    jobRaw.CompletedAt.Sub(jobRaw.StartedAt.Time),
 			}
-			job.Crumb = "<" + job.Name + ">" + "<" + run.Name + ">"
 			job.Link = fmt.Sprintf(
 				"https://github.com/%s/%s/actions/runs/%d/job/%d",
 				run.Repository.Owner.Login, run.Repository.Name, run.ID, job.ID,
 			)
 
 			if job.Conclusion != "success" && includeErrorLogs {
-				logs, err := getLogsForJob(ctx, logger, client, job.ID, run.Repository.Owner.Login, run.Repository.Name)
+				logs, err := GetLogsForJob(ctx, logger, client, job.ID, run.Repository.Owner.Login, run.Repository.Name)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -582,7 +657,7 @@ func GetJobsAndStepsForRun(
 
 			jobRuns = append(jobRuns, job)
 
-			steps := GetStepsForJob(ctx, logger, jobRaw, &job, job.Crumb, allowedStepConclusions)
+			steps := GetStepsForJob(ctx, logger, jobRaw, &job, allowedStepConclusions)
 			stepRuns = append(stepRuns, steps...)
 		}
 
@@ -601,7 +676,6 @@ func GetStepsForJob(
 	logger *slog.Logger,
 	jobRaw *github.WorkflowJob,
 	job *JobRun,
-	crumb string,
 	allowedConclusions []string,
 ) []StepRun {
 	steps := []StepRun{}
@@ -617,7 +691,7 @@ func GetStepsForJob(
 		}
 
 		step := StepRun{
-			JobRun:      *job,
+			JobRun:      job,
 			Type:        TypeNameStepRun,
 			Name:        stepRaw.GetName(),
 			Status:      stepRaw.GetStatus(),
@@ -626,7 +700,6 @@ func GetStepsForJob(
 			StartedAt:   stepRaw.StartedAt.Time,
 			CompletedAt: stepRaw.CompletedAt.Time,
 		}
-		step.Crumb = "<" + step.Name + ">" + crumb
 
 		steps = append(steps, step)
 	}

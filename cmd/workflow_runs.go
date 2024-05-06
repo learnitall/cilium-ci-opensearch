@@ -15,20 +15,21 @@ import (
 )
 
 type typeWorkflowRunsParams struct {
-	Since             time.Time
-	SinceStr          string
-	Until             time.Time
-	UntilStr          string
-	Repository        string
-	Branch            string
-	Events            []string
-	StepConclusions   []string
-	JobConclusions    []string
-	TestConclusions   []string
-	RunStatuses       []string
-	OnlyFailedSteps   bool
-	IncludeTestsuites bool
-	IncludeErrorLogs  bool
+	Since                       time.Time
+	SinceStr                    string
+	Until                       time.Time
+	UntilStr                    string
+	Repository                  string
+	Branch                      string
+	Events                      []string
+	StepConclusions             []string
+	JobConclusions              []string
+	TestConclusions             []string
+	RunStatuses                 []string
+	OnlyFailedSteps             bool
+	IncludeTestsuites           bool
+	IncludeErrorLogs            bool
+	ParseWorkflowDispatchInputs bool
 }
 
 var (
@@ -82,7 +83,7 @@ var (
 
 			for _, event := range workflowRunsParams.Events {
 				for _, status := range workflowRunsParams.RunStatuses {
-					l := logger.With(
+					eventLogger := logger.With(
 						"event", event,
 						"status", status,
 					)
@@ -93,22 +94,16 @@ var (
 						status, event, workflowRunsParams.Since, workflowRunsParams.Until,
 					)
 					if err != nil {
-						l.Error(
+						eventLogger.Error(
 							"Unable to pull workflow runs",
 							"err", err,
 						)
 						os.Exit(1)
 					}
 
-					if err := opensearch.BulkWriteObjects[gh.WorkflowRun](runs, rootParams.Index, os.Stdout); err != nil {
-						logger.Error(
-							"Unexepected error while writing workflow run bulk entries",
-							"err", err,
-						)
-						os.Exit(1)
-					}
-
 					for _, run := range runs {
+						runLogger := eventLogger.With("run-id", run.ID)
+
 						jobs, steps, err := gh.GetJobsAndStepsForRun(
 							ctx, logger, client, &run,
 							workflowRunsParams.JobConclusions,
@@ -116,16 +111,49 @@ var (
 							workflowRunsParams.IncludeErrorLogs,
 						)
 						if err != nil {
-							l.Error(
+							runLogger.Error(
 								"Unable to pull job and steps for workflow run",
-								"run", run.ID,
 								"err", err,
 							)
 							os.Exit(1)
 						}
 
+						if workflowRunsParams.ParseWorkflowDispatchInputs && event == "workflow_dispatch" {
+							for _, job := range jobs {
+								if job.Name == "Echo Workflow Dispatch Inputs" {
+									if job.Conclusion != "success" {
+										runLogger.Warn("echo-inputs job was not successful, not parsing inputs")
+										break
+									}
+
+									logs, err := gh.GetLogsForJob(ctx, logger, client, job.ID, run.Repository.Owner.Login, run.Repository.Name)
+									if err != nil {
+										runLogger.Error(
+											"Unable to pull logs for echo-inputs job",
+											"err", err,
+										)
+										os.Exit(1)
+									}
+
+									inputs := gh.ParseEchoInputsLogs(logs)
+
+									if len(inputs) == 0 {
+										runLogger.Warn("Parsed no inputs for workflow_dispatch workflow")
+									}
+
+									runLogger.Debug(
+										"Got inputs for workflow_dispatch workflow",
+										"inputs", inputs,
+									)
+									run.WorkflowDispatchInputs = inputs
+
+									break
+								}
+							}
+						}
+
 						if err := opensearch.BulkWriteObjects[gh.JobRun](jobs, rootParams.Index, os.Stdout); err != nil {
-							logger.Error(
+							runLogger.Error(
 								"Unexepected error while writing job run bulk entries",
 								"err", err,
 							)
@@ -133,7 +161,7 @@ var (
 						}
 
 						if err := opensearch.BulkWriteObjects[gh.StepRun](steps, rootParams.Index, os.Stdout); err != nil {
-							logger.Error(
+							runLogger.Error(
 								"Unexepected error while writing step run bulk entries",
 								"err", err,
 							)
@@ -145,7 +173,7 @@ var (
 							workflowRunsParams.TestConclusions,
 						)
 						if err != nil {
-							l.Error(
+							runLogger.Error(
 								"Unable to parse test cases for workflow run",
 								"run", run.ID,
 								"err", err,
@@ -154,7 +182,7 @@ var (
 						}
 
 						if err := opensearch.BulkWriteObjects[gh.Testsuite](suites, rootParams.Index, os.Stdout); err != nil {
-							logger.Error(
+							runLogger.Error(
 								"Unexepected error while writing job run bulk entries",
 								"err", err,
 							)
@@ -162,12 +190,20 @@ var (
 						}
 
 						if err := opensearch.BulkWriteObjects[gh.Testcase](cases, rootParams.Index, os.Stdout); err != nil {
-							logger.Error(
+							runLogger.Error(
 								"Unexepected error while writing step run bulk entries",
 								"err", err,
 							)
 							os.Exit(1)
 						}
+					}
+
+					if err := opensearch.BulkWriteObjects[gh.WorkflowRun](runs, rootParams.Index, os.Stdout); err != nil {
+						eventLogger.Error(
+							"Unexepected error while writing workflow run bulk entries",
+							"err", err,
+						)
+						os.Exit(1)
 					}
 				}
 			}
@@ -224,6 +260,11 @@ func init() {
 	workflowRunsCmd.PersistentFlags().BoolVar(
 		&workflowRunsParams.IncludeErrorLogs, "error-logs", true,
 		"Download logs for each job and include relevant error-specific logs",
+	)
+	workflowRunsCmd.PersistentFlags().BoolVar(
+		&workflowRunsParams.ParseWorkflowDispatchInputs, "parse-wd-inputs", true,
+		"For workflow runs triggered by workflow_dispatch that have a job named echo-inputs"+
+			"parse logs to determine the inputs given to the trigger. See cilium/cilium#31424",
 	)
 	workflowCmd.AddCommand(workflowRunsCmd)
 }
