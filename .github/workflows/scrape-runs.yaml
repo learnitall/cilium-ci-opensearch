@@ -2,7 +2,7 @@ name: Scrape and Index Workflow Runs
 
 on:
   schedule:
-    - cron: "0 */7 * * *"
+    - cron: "5 */1 * * *"
   workflow_dispatch:
     inputs:
       name:
@@ -55,8 +55,9 @@ jobs:
       - if: ${{ github.event_name == 'schedule' }}
         name: Prepare scheduled inputs
         run: |
-          today=$(date -d '-1 day' '+%Y-%m-%d')
-          m=$(jq -c '.include |= map(. + {"until": "'$today'", "since": "'$today'"})' < ./.github/scheduled.json)
+          until=$(date '+%Y-%m-%dT%H')
+          since=$(date -d '-1 hour' '+%Y-%m-%dT%H')
+          m=$(jq -c '.include |= map(. + {"until": "'$until'", "since": "'$since'"})' < ./.github/scheduled.json)
           echo $m > /tmp/matrix.json
       - if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         run: |

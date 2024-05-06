@@ -53,15 +53,26 @@ func GetWorkflowRuns(
 	}
 
 	// GH API will return 1000 workflow runs at max. To ensure we don't get cut-off, pull
-	// workflows one day at a time.
-	currentDay := until
+	// workflows, at most, one day at a time.
+	currentTime := until
 
-	for currentDay.Sub(since) >= 0 {
+	for currentTime.Sub(since) >= 0 {
+		var dateQuery string
+
 		// Format is based on https://docs.github.com/en/search-github/getting-started-with-searching-on-github/understanding-the-search-syntax#query-for-dates
-		// GH doesn't have an "equals" date query, so we use the inclusive date range query.
-		dateQuery := fmt.Sprintf("%[1]s..%[1]s", currentDay.Format("2006-01-02"))
+		// If there is more than 24 hours left in the duration between since and until, then query for
+		// a full day.
+		// Otherwise, just query for the remaining hours.
+		if currentTime.Sub(since) >= time.Hour*24 {
+			// GH doesn't have an "equals" date query, so we use the inclusive date range query.
+			dateQuery = fmt.Sprintf("%[1]s..%[1]s", currentTime.Format("2006-01-02"))
+		} else {
+			dateQuery = fmt.Sprintf(
+				"%s..%s", since.Format(time.RFC3339), currentTime.Format(time.RFC3339),
+			)
+		}
 
-		l := baseLogger.With("date", currentDay, "page", runOpts.Page)
+		l := baseLogger.With("dateQuery", dateQuery, "page", runOpts.Page)
 		l.Info("Pulling workflow runs for repository", "event", event, "status", status)
 
 		runs, runResp, err := WrapWithRateLimitRetry[github.WorkflowRuns](
@@ -177,7 +188,7 @@ func GetWorkflowRuns(
 		}
 
 		if runResp.NextPage == 0 {
-			currentDay = currentDay.Add(-(time.Hour * 24))
+			currentTime = currentTime.Add(-time.Hour * 24)
 		}
 
 		runOpts.Page = runResp.NextPage

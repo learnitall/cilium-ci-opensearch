@@ -32,6 +32,10 @@ type typeWorkflowRunsParams struct {
 	ParseWorkflowDispatchInputs bool
 }
 
+const (
+	timeFormat = "2006-01-02T15"
+)
+
 var (
 	defaultGitHubConclusions = []string{"success", "failure", "timed_out", "cancelled", "skipped"}
 	defaultJUnitConclusions  = []string{"passed", "failed", "skipped"}
@@ -39,14 +43,18 @@ var (
 	workflowRunsCmd          = &cobra.Command{
 		Use: "runs",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			s, err := time.Parse(time.DateOnly, workflowRunsParams.SinceStr)
+			tz := time.Now().Local().Location()
+
+			s, err := time.ParseInLocation(timeFormat, workflowRunsParams.SinceStr, tz)
 			if err != nil {
 				return fmt.Errorf("unable to parse '%s' to format of '%s': %w", workflowRunsParams.SinceStr, time.DateOnly, err)
 			}
 
+			fmt.Println(s.Zone())
+
 			workflowRunsParams.Since = s
 
-			u, err := time.Parse(time.DateOnly, workflowRunsParams.UntilStr)
+			u, err := time.ParseInLocation(timeFormat, workflowRunsParams.UntilStr, tz)
 			if err != nil {
 				return fmt.Errorf("unable to parse '%s' to format of '%s': %w", workflowRunsParams.UntilStr, time.DateOnly, err)
 			}
@@ -214,16 +222,16 @@ var (
 
 func init() {
 	workflowRunsCmd.PersistentFlags().StringVarP(
-		&workflowRunsParams.SinceStr, "since", "s", time.Now().Add(-time.Hour*24*7).Format(time.DateOnly),
+		&workflowRunsParams.SinceStr, "since", "s", time.Now().Add(-time.Hour*24*7).Format(timeFormat),
 		"Duration specifying how far back in time to query for workflow runs. "+
 			"Workflows older than this time will not be returned. "+
-			"Uses day granularity. Date is inclusive. Expected format is YYYY-MM-DD.",
+			"Uses hour granularity. Time is inclusive. Expected format is YYYY-MM-DDTHH.",
 	)
 	workflowRunsCmd.PersistentFlags().StringVarP(
-		&workflowRunsParams.UntilStr, "until", "u", time.Now().Format(time.DateOnly),
+		&workflowRunsParams.UntilStr, "until", "u", time.Now().Format(timeFormat),
 		"Duration specifying the latest point in time to query for workflow runs. "+
 			"Workflows created after this time will not be returned. "+
-			"Uses day granularity. Date is inclusive. Expected format is YYYY-MM-DD.",
+			"Uses hour granularity. Time is inclusive. Expected format is YYYY-MM-DDTHH.",
 	)
 	workflowRunsCmd.PersistentFlags().StringVarP(
 		&workflowRunsParams.Repository, "repository", "r", "cilium/cilium",
