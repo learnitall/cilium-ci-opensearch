@@ -4,7 +4,7 @@
             "name": "cilium-cilium-push-events-main",
             "repository": "cilium/cilium",
             "branch": "main",
-            "events": "push"
+            "events": "schedule,workflow_dispatch"
         },
         {
             "name": "cilium-ciliumcli-schedule-events-main",
