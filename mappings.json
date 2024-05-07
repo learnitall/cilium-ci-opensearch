@@ -1,7 +1,7 @@
 {
   "properties": {
     "actor": {
-      "type": "nested",
+      "type": "object",
       "properties": {
         "id": {
           "type": "long"
@@ -26,36 +26,6 @@
         }
       }
     },
-    "artifacts_url": {
-      "fields": {
-        "keyword": {
-          "type": "keyword",
-          "ignore_above": 256
-        }
-      },
-      "type": "text"
-    },
-    "conclusion": {
-      "fields": {
-        "keyword": {
-          "type": "keyword",
-          "ignore_above": 256
-        }
-      },
-      "type": "text"
-    },
-    "created_at": {
-      "type": "date"
-    },
-    "display_title": {
-      "fields": {
-        "keyword": {
-          "type": "keyword",
-          "ignore_above": 256
-        }
-      },
-      "type": "text"
-    },
     "event": {
       "fields": {
         "keyword": {
@@ -75,10 +45,10 @@
       "type": "text"
     },
     "head_commit": {
-      "type": "nested",
+      "type": "object",
       "properties": {
         "author": {
-          "type": "nested",
+          "type": "object",
           "properties": {
             "email": {
               "fields": {
@@ -107,8 +77,7 @@
               "ignore_above": 256
             }
           },
-          "type": "text",
-          "term_vector": "with_positions_offsets_payloads"
+          "type": "text"
         }
       }
     },
@@ -121,194 +90,25 @@
       },
       "type": "text"
     },
-    "id": {
+    "job_completed_at": {
+      "type": "date"
+    },
+    "job_conclusion": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "job_created_at": {
+      "type": "date"
+    },
+    "job_duration": {
       "type": "long"
     },
-    "jobs": {
-      "type": "nested",
-      "properties": {
-        "completed_at": {
-          "type": "date"
-        },
-        "conclusion": {
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          },
-          "type": "text"
-        },
-        "created_at": {
-          "type": "date"
-        },
-        "crumb": {
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          },
-          "type": "text"
-        },
-        "duration": {
-          "type": "long"
-        },
-        "errorLogs": {
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          },
-          "type": "text",
-          "term_vector": "with_positions_offsets_payloads"
-        },
-        "id": {
-          "type": "long"
-        },
-        "link": {
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          },
-          "type": "text"
-        },
-        "name": {
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          },
-          "type": "text",
-          "term_vector": "with_positions_offsets_payloads"
-        },
-        "node_id": {
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          },
-          "type": "text"
-        },
-        "run_id": {
-          "type": "long"
-        },
-        "run_url": {
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          },
-          "type": "text"
-        },
-        "started_at": {
-          "type": "date"
-        },
-        "status": {
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          },
-          "type": "text"
-        },
-        "steps": {
-          "type": "nested",
-          "properties": {
-            "completed_at": {
-              "type": "date"
-            },
-            "conclusion": {
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              },
-              "type": "text"
-            },
-            "crumb": {
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              },
-              "type": "text"
-            },
-            "name": {
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              },
-              "type": "text",
-              "term_vector": "with_positions_offsets_payloads"
-            },
-            "number": {
-              "type": "long"
-            },
-            "started_at": {
-              "type": "date"
-            },
-            "status": {
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              },
-              "type": "text"
-            }
-          }
-        },
-        "url": {
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          },
-          "type": "text"
-        }
-      }
-    },
-    "jobs_url": {
-      "fields": {
-        "keyword": {
-          "type": "keyword",
-          "ignore_above": 256
-        }
-      },
-      "type": "text"
-    },
-    "link": {
-      "fields": {
-        "keyword": {
-          "type": "keyword",
-          "ignore_above": 256
-        }
-      },
-      "type": "text"
-    },
-    "logs_url": {
-      "fields": {
-        "keyword": {
-          "type": "keyword",
-          "ignore_above": 256
-        }
-      },
-      "type": "text"
-    },
-    "name": {
+    "job_error_logs": {
       "fields": {
         "keyword": {
           "type": "keyword",
@@ -318,7 +118,61 @@
       "type": "text",
       "term_vector": "with_positions_offsets_payloads"
     },
-    "node_id": {
+    "job_id": {
+      "type": "long"
+    },
+    "job_link": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "job_name": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "job_node_id": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "job_run_id": {
+      "type": "long"
+    },
+    "job_run_url": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "job_started_at": {
+      "type": "date"
+    },
+    "job_status": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "job_url": {
       "fields": {
         "keyword": {
           "type": "keyword",
@@ -328,7 +182,7 @@
       "type": "text"
     },
     "repository": {
-      "type": "nested",
+      "type": "object",
       "properties": {
         "full_name": {
           "fields": {
@@ -361,7 +215,7 @@
           "type": "text"
         },
         "owner": {
-          "type": "nested",
+          "type": "object",
           "properties": {
             "id": {
               "type": "long"
@@ -388,16 +242,10 @@
         }
       }
     },
-    "run_attempt": {
-      "type": "long"
-    },
-    "run_number": {
-      "type": "long"
-    },
-    "run_started_at": {
+    "step_completed_at": {
       "type": "date"
     },
-    "status": {
+    "step_conclusion": {
       "fields": {
         "keyword": {
           "type": "keyword",
@@ -406,100 +254,77 @@
       },
       "type": "text"
     },
-    "tests": {
-      "type": "nested",
-      "properties": {
-        "duration": {
-          "type": "long"
-        },
-        "tests": {
-          "type": "nested",
-          "properties": {
-            "duration": {
-              "type": "long"
-            },
-            "endTime": {
-              "type": "date"
-            },
-            "name": {
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              },
-              "type": "text",
-              "term_vector": "with_positions_offsets_payloads"
-            },
-            "testCases": {
-              "type": "nested",
-              "properties": {
-                "duration": {
-                  "type": "long"
-                },
-                "name": {
-                  "fields": {
-                    "keyword": {
-                      "type": "keyword",
-                      "ignore_above": 256
-                    }
-                  },
-                  "type": "text",
-                  "term_vector": "with_positions_offsets_payloads"
-                },
-                "status": {
-                  "fields": {
-                    "keyword": {
-                      "type": "keyword",
-                      "ignore_above": 256
-                    }
-                  },
-                  "type": "text"
-                }
-              }
-            },
-            "totalErrors": {
-              "type": "long"
-            },
-            "totalErros": {
-              "type": "long"
-            },
-            "totalFailures": {
-              "type": "long"
-            },
-            "totalSkipped": {
-              "type": "long"
-            },
-            "totalTests": {
-              "type": "long"
-            },
-            "workflowStepName": {
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              },
-              "type": "text"
-            }
-          }
-        },
-        "totalErrors": {
-          "type": "long"
-        },
-        "totalFailures": {
-          "type": "long"
-        },
-        "totalSkipped": {
-          "type": "long"
-        },
-        "totalTests": {
-          "type": "long"
+    "step_name": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
         }
-      }
+      },
+      "type": "text"
+    },
+    "step_number": {
+      "type": "long"
+    },
+    "step_started_at": {
+      "type": "date"
+    },
+    "step_status": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "test_case_duration": {
+      "type": "long"
+    },
+    "test_case_name": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "test_case_status": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "test_suite_duration": {
+      "type": "long"
+    },
+    "test_suite_end_time": {
+      "type": "date"
+    },
+    "test_suite_name": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "test_suite_total_failures": {
+      "type": "long"
+    },
+    "test_suite_total_skipped": {
+      "type": "long"
+    },
+    "test_suite_total_tests": {
+      "type": "long"
     },
     "triggering_actor": {
-      "type": "nested",
+      "type": "object",
       "properties": {
         "id": {
           "type": "long"
@@ -524,10 +349,37 @@
         }
       }
     },
-    "updated_at": {
+    "type": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "workflow_artifacts_url": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "workflow_conclusion": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "workflow_created_at": {
       "type": "date"
     },
-    "url": {
+    "workflow_display_title": {
       "fields": {
         "keyword": {
           "type": "keyword",
@@ -538,6 +390,84 @@
     },
     "workflow_id": {
       "type": "long"
+    },
+    "workflow_jobs_url": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "workflow_link": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "workflow_logs_url": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "workflow_name": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "workflow_node_id": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "workflow_parent_id": {
+      "type": "long"
+    },
+    "workflow_run_attempt": {
+      "type": "long"
+    },
+    "workflow_run_number": {
+      "type": "long"
+    },
+    "workflow_run_started_at": {
+      "type": "date"
+    },
+    "workflow_status": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
+    },
+    "workflow_updated_at": {
+      "type": "date"
+    },
+    "workflow_url": {
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      },
+      "type": "text"
     }
   }
 }
