@@ -124,4 +124,5 @@ jobs:
         working-directory: ./splits
         run: |
           cat *.json | jq --exit-status '.errors | not'
+          cat *.json | jq --exit-status '.error | not'
 
