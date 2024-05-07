@@ -1,7 +1,7 @@
 {
     "include": [
         {
-            "name": "cilium-cilium-push-events-main",
+            "name": "cilium-cilium-dispatch-schedule-events-main",
             "repository": "cilium/cilium",
             "branch": "main",
             "events": "schedule,workflow_dispatch"
