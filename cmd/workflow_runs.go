@@ -50,8 +50,6 @@ var (
 				return fmt.Errorf("unable to parse '%s' to format of '%s': %w", workflowRunsParams.SinceStr, time.DateOnly, err)
 			}
 
-			fmt.Println(s.Zone())
-
 			workflowRunsParams.Since = s
 
 			u, err := time.ParseInLocation(timeFormat, workflowRunsParams.UntilStr, tz)
