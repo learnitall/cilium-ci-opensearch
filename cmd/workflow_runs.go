@@ -153,9 +153,40 @@ var (
 									)
 									run.WorkflowDispatchInputs = inputs
 
+									sha, ok := inputs["SHA"]
+									if !ok {
+										runLogger.Error("Parsed inputs for workflow_dispatch workflow do not contain SHA")
+										os.Exit(1)
+									}
+
+									run.TestedSHA = sha
+
+									commit, err := gh.GetCommitBySHA(
+										ctx, runLogger, run.Repository.Owner.Login,
+										run.Repository.Name, client, sha,
+									)
+									if err != nil {
+										runLogger.Error("Unable to get commit info for sha", "sha", sha)
+										os.Exit(1)
+									}
+
+									run.TestedCommit = *commit
+
+									contextRef, ok := inputs["context-ref"]
+									if !ok {
+										runLogger.Error("Parsed inputs for workflow_dispatch workflow do not contain context-ref")
+										os.Exit(1)
+									}
+
+									run.TestedBranch = contextRef
+
 									break
 								}
 							}
+						} else if event != "workflow_dispatch" {
+							run.TestedCommit = run.HeadCommit
+							run.TestedSHA = run.HeadSHA
+							run.TestedBranch = run.HeadBranch
 						}
 
 						if err := opensearch.BulkWriteObjects[gh.JobRun](jobs, rootParams.Index, os.Stdout); err != nil {

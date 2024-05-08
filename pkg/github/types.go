@@ -62,6 +62,9 @@ type WorkflowRun struct {
 	Actor                  User              `json:"actor,omitempty"`
 	TriggeringActor        User              `json:"triggering_actor,omitempty"`
 	Repository             Repository        `json:"repository,omitempty"`
+	TestedBranch           string            `json:"tested_branch,omitempty"`
+	TestedSHA              string            `json:"tested_sha,omitempty"`
+	TestedCommit           Commit            `json:"tested_commit,omitempty"`
 	HeadBranch             string            `json:"head_branch,omitempty"`
 	HeadSHA                string            `json:"head_sha,omitempty"`
 	HeadCommit             Commit            `json:"head_commit,omitempty"`
@@ -84,9 +87,9 @@ type JobRun struct {
 	Name        string    `json:"job_name,omitempty"`
 	Logs        string    `json:"job_logs,omitempty"`
 	// ErrorLogs contains log lines that contain an error.
-	ErrorLogs []string `json:"job_error_logs,omitempty"`
-	Link     string        `json:"job_link,omitempty"`
-	Duration time.Duration `json:"job_duration,omitempty"`
+	ErrorLogs []string      `json:"job_error_logs,omitempty"`
+	Link      string        `json:"job_link,omitempty"`
+	Duration  time.Duration `json:"job_duration,omitempty"`
 }
 
 type StepRun struct {
