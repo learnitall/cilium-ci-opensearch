@@ -95,6 +95,14 @@ jobs:
             --events ${{ matrix.events }} \
             --index ${{ env.TARGET_INDEX }} \
             --verbose > results.json
+      - name: Bail if no results were found
+        run: |
+          ls -lah results.json
+
+          if ! [ -s results.json ]; then
+            echo "No results, exiting early"
+            exit 0
+          fi
       - name: Create splits
         run: |
           mkdir splits
