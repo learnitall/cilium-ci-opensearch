@@ -228,7 +228,6 @@ func pullRunsWithEventAndStatus(
 			)
 			os.Exit(1)
 		}
-		break
 	}
 
 	if err := opensearch.BulkWriteObjects[*gh.WorkflowRun](runs, rootParams.Index, os.Stdout); err != nil {
