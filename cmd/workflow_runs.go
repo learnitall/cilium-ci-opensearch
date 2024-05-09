@@ -160,7 +160,7 @@ func pullRunsWithEventAndStatus(
 		runLogger := eventLogger.With("run-id", run.ID)
 
 		jobs, steps, err := gh.GetJobsAndStepsForRun(
-			ctx, logger, client, &run,
+			ctx, logger, client, run,
 			workflowRunsParams.JobConclusions,
 			workflowRunsParams.StepConclusions,
 			workflowRunsParams.IncludeErrorLogs,
@@ -175,7 +175,7 @@ func pullRunsWithEventAndStatus(
 
 		// Fields that start with Tested* represent information regarding the tested ref.
 		// These fields require special, context-aware handling.
-		setTestedFields(ctx, runLogger, client, event, repoOwner, repoName, &run, &jobs)
+		setTestedFields(ctx, runLogger, client, event, repoOwner, repoName, run, &jobs)
 
 		if err := opensearch.BulkWriteObjects[gh.JobRun](jobs, rootParams.Index, os.Stdout); err != nil {
 			runLogger.Error(
@@ -194,7 +194,7 @@ func pullRunsWithEventAndStatus(
 		}
 
 		suites, cases, err := gh.GetTestsForWorkflowRun(
-			ctx, logger, client, &run,
+			ctx, logger, client, run,
 			workflowRunsParams.TestConclusions,
 		)
 		if err != nil {
@@ -221,9 +221,10 @@ func pullRunsWithEventAndStatus(
 			)
 			os.Exit(1)
 		}
+		break
 	}
 
-	if err := opensearch.BulkWriteObjects[gh.WorkflowRun](runs, rootParams.Index, os.Stdout); err != nil {
+	if err := opensearch.BulkWriteObjects[*gh.WorkflowRun](runs, rootParams.Index, os.Stdout); err != nil {
 		eventLogger.Error(
 			"Unexepected error while writing workflow run bulk entries",
 			"err", err,

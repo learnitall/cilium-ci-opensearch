@@ -39,7 +39,7 @@ func (b *BulkEntry) Write(target io.Writer) {
 // Equal objects have the same ID.
 func GetDocumentID(obj any) (string, error) {
 	switch o := obj.(type) {
-	case github.WorkflowRun:
+	case *github.WorkflowRun:
 		return o.NodeID, nil
 	case github.JobRun:
 		return o.NodeID, nil

@@ -37,7 +37,7 @@ func GetWorkflowRuns(
 	event string,
 	since time.Time,
 	until time.Time,
-) ([]WorkflowRun, error) {
+) ([]*WorkflowRun, error) {
 	baseLogger := logger.With(
 		"repoOwner", repoOwner,
 		"repoName", repoName,
@@ -46,7 +46,7 @@ func GetWorkflowRuns(
 		"until", until,
 	)
 
-	workflowRuns := []WorkflowRun{}
+	workflowRuns := []*WorkflowRun{}
 
 	runOpts := github.ListOptions{
 		PerPage: PER_PAGE,
@@ -184,7 +184,7 @@ func GetWorkflowRuns(
 				run.Repository.Owner.Login, run.Repository.Name, run.ID,
 			)
 
-			workflowRuns = append(workflowRuns, run)
+			workflowRuns = append(workflowRuns, &run)
 		}
 
 		if runResp.NextPage == 0 {
