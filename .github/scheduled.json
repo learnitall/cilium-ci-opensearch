@@ -7,6 +7,24 @@
             "events": "schedule,workflow_dispatch"
         },
         {
+            "name": "cilium-cilium-dispatch-events-1.13",
+            "repository": "cilium/cilium",
+            "branch": "v1.13",
+            "events": "workflow_dispatch"
+        },
+        {
+            "name": "cilium-cilium-dispatch-events-1.14",
+            "repository": "cilium/cilium",
+            "branch": "v1.14",
+            "events": "workflow_dispatch"
+        }, 
+        {
+            "name": "cilium-cilium-dispatch-events-1.15",
+            "repository": "cilium/cilium",
+            "branch": "v1.15",
+            "events": "workflow_dispatch"
+        }, 
+        {
             "name": "cilium-ciliumcli-schedule-events-main",
             "repository": "cilium/cilium-cli",
             "branch": "main",
