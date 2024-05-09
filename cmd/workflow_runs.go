@@ -180,7 +180,9 @@ func pullRunsWithEventAndStatus(
 
 		// Fields that start with Tested* represent information regarding the tested ref.
 		// These fields require special, context-aware handling.
-		setTestedFields(ctx, runLogger, client, event, repoOwner, repoName, run, &jobs)
+		// TODO: Modify this function to determine if a workflow_dispatch run was scheduled by
+		// ariane or executed as part of a PR. Add a flag to ignore PRs.
+		// setTestedFields(ctx, runLogger, client, event, repoOwner, repoName, run, &jobs)
 
 		if err := opensearch.BulkWriteObjects[gh.JobRun](jobs, rootParams.Index, os.Stdout); err != nil {
 			runLogger.Error(
