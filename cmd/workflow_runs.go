@@ -70,8 +70,13 @@ func setTestedFields(
 	}
 
 	if echoJob == nil {
-		logger.Error("Got workflow_dispatch event with no echo-inputs job")
-		os.Exit(1)
+		if run.HeadBranch == "main" {
+			// The echo-inputs job is currently being backported to other stable branches.
+			// Do not fail if we are pulling jobs for a different branch.
+			logger.Error("Got workflow_dispatch event with no echo-inputs job")
+			os.Exit(1)
+		}
+		return
 	}
 
 	if echoJob.Conclusion != "success" {
