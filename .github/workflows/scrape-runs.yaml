@@ -76,6 +76,9 @@ jobs:
       # repository at a time. If it takes longer that's ok
       # since it reduces the chance we run into a limit.
       max-parallel: 1
+      # Scrape jobs are independent, therefore one job's failure
+      # shouldn't impact another's.
+      fail-fast: false
       matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
     runs-on: ubuntu-22.04
     steps:
