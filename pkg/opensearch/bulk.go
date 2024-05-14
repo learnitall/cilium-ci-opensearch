@@ -42,13 +42,16 @@ func GetDocumentID(obj any) (string, error) {
 	case *github.WorkflowRun:
 		return o.NodeID, nil
 	case github.JobRun:
-		return o.NodeID, nil
+		return fmt.Sprintf("%s-%s", o.WorkflowRun.NodeID, o.NodeID), nil
 	case github.StepRun:
-		return fmt.Sprintf("%s-%d", o.JobRun.NodeID, o.Number), nil
+		return fmt.Sprintf("%s-%s-%d", o.WorkflowRun.NodeID, o.JobRun.NodeID, o.Number), nil
 	case github.Testsuite:
-		return fmt.Sprintf("%s-%s", o.WorkflowRun.NodeID, o.Name), nil
+		return fmt.Sprintf("%s-%s-%s-%s", o.WorkflowRun.NodeID, o.Name, o.JobName, o.MatrixName), nil
 	case github.Testcase:
-		return fmt.Sprintf("%s-%s-%s", o.WorkflowRun.NodeID, o.Testsuite.Name, o.Name), nil
+		return fmt.Sprintf(
+			"%s-%s-%s-%s-%s",
+			o.WorkflowRun.NodeID, o.Testsuite.Name, o.Testsuite.JobName, o.Testsuite.MatrixName, o.Name,
+		), nil
 	}
 
 	return "", fmt.Errorf("unable to determine document ID for object '%v'", obj)

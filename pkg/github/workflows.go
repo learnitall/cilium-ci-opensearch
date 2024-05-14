@@ -418,6 +418,21 @@ func GetTestsForWorkflowRun(
 			continue
 		}
 
+		// Grab the matrix entry and job name from the JUnit file if available.
+		// Will be of the format: job_name (matrix_name).xml
+		jobName := ""
+		matrixName := ""
+		parts := strings.Split(fil.Name, ")")
+		if len(parts) == 2 && parts[1] == ".xml" {
+			parts = strings.Split(parts[0], "(")
+			if len(parts) == 2 {
+				jobName = strings.TrimSpace(parts[0])
+				matrixName = strings.TrimSpace(parts[1])
+
+				l.Info("Parsed job and matrix name from junit filename", "job-name", jobName, "matrix-name", matrixName)
+			}
+		}
+
 		// A JUnit file may either be:
 		// 1. A junit.Testsuites object with multiple junit.Testsuite objects.
 		// 2. A junit.Testsuites object with a single junit.Testsuite object.
@@ -444,6 +459,8 @@ func GetTestsForWorkflowRun(
 				return nil, nil, fmt.Errorf("unable to parse test suite in junit file '%s': %v", fil.Name, err)
 			}
 
+			parsedSuite.JobName = jobName
+			parsedSuite.MatrixName = matrixName
 			suites = append(suites, *parsedSuite)
 			cases = append(cases, parsedCases...)
 		}
