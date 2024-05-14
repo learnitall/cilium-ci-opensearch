@@ -162,7 +162,7 @@ func pullRunsWithEventAndStatus(
 	}
 
 	for _, run := range runs {
-		runLogger := eventLogger.With("run-id", run.ID)
+		runLogger := eventLogger.With("workflow-id", run.ID)
 
 		jobs, steps, err := gh.GetJobsAndStepsForRun(
 			ctx, logger, client, run,

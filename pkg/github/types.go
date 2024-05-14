@@ -112,8 +112,7 @@ type Testsuite struct {
 	*WorkflowRun
 	Type          string        `json:"type,omitempty"`
 	Name          string        `json:"test_suite_name,omitempty"`
-	JobName       string        `json:"test_suite_job_name,omitempty"`
-	MatrixName    string        `json:"test_suite_matrix_name,omitempty"`
+	JUnitFilename string        `json:"test_suite_junit_filename,omitempty"`
 	TotalTests    int           `json:"test_suite_total_tests,omitempty"`
 	TotalFailures int           `json:"test_suite_total_failures,omitempty"`
 	TotalErrors   int           `json:"test_suite_total_errors,omitempty"`

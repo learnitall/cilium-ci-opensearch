@@ -40,17 +40,17 @@ func (b *BulkEntry) Write(target io.Writer) {
 func GetDocumentID(obj any) (string, error) {
 	switch o := obj.(type) {
 	case *github.WorkflowRun:
-		return o.NodeID, nil
+		return fmt.Sprintf("%d-%d", o.ID, o.RunAttempt), nil
 	case github.JobRun:
-		return fmt.Sprintf("%s-%s", o.WorkflowRun.NodeID, o.NodeID), nil
+		return fmt.Sprintf("%d-%d-%d", o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, o.ID), nil
 	case github.StepRun:
-		return fmt.Sprintf("%s-%s-%d", o.WorkflowRun.NodeID, o.JobRun.NodeID, o.Number), nil
+		return fmt.Sprintf("%d-%d-%d-%d", o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, o.ID, o.Number), nil
 	case github.Testsuite:
-		return fmt.Sprintf("%s-%s-%s-%s", o.WorkflowRun.NodeID, o.Name, o.JobName, o.MatrixName), nil
+		return fmt.Sprintf("%d-%d-%s", o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, o.JUnitFilename), nil
 	case github.Testcase:
 		return fmt.Sprintf(
-			"%s-%s-%s-%s-%s",
-			o.WorkflowRun.NodeID, o.Testsuite.Name, o.Testsuite.JobName, o.Testsuite.MatrixName, o.Name,
+			"%d-%d-%s-%s",
+			o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, o.Testsuite.JUnitFilename, o.Name,
 		), nil
 	}
 
