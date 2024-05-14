@@ -69,7 +69,7 @@ func BulkWriteObjects[T any](objs []T, index string, target io.Writer) error {
 		(&BulkEntry{
 			Index: index,
 			ID:    id,
-			Verb:  "index",
+			Verb:  "create",
 			Data:  d,
 		}).Write(target)
 	}
