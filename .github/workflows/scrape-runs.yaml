@@ -56,7 +56,7 @@ jobs:
         name: Prepare scheduled inputs
         run: |
           until=$(date '+%Y-%m-%dT%H')
-          since=$(date -d '-1 hour' '+%Y-%m-%dT%H')
+          since=$(date -d '-3 hours' '+%Y-%m-%dT%H')
           m=$(jq -c '.include |= map(. + {"until": "'$until'", "since": "'$since'"})' < ./.github/scheduled.json)
           echo $m > /tmp/matrix.json
       - if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
