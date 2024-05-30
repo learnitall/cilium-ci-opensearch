@@ -709,8 +709,8 @@ func GetStepsForJob(
 			Status:      stepRaw.GetStatus(),
 			Conclusion:  stepRaw.GetConclusion(),
 			Number:      stepRaw.GetNumber(),
-			StartedAt:   stepRaw.StartedAt.Time,
-			CompletedAt: stepRaw.CompletedAt.Time,
+			StartedAt:   stepRaw.GetStartedAt().Time,
+			CompletedAt: stepRaw.GetCompletedAt().Time,
 		}
 
 		steps = append(steps, step)
