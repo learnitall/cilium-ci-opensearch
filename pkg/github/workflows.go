@@ -584,7 +584,9 @@ func IsErrorLog(line string) bool {
 		strings.Contains(line, "🟥") ||
 		strings.Contains(line, "ERROR:") ||
 		strings.Contains(line, "Warning:") ||
-		strings.Contains(line, "Error:")
+		strings.Contains(line, "Error:") ||
+		strings.Contains(line, "[Fail]") ||
+		strings.Contains(line, "FAIL!")
 }
 
 // GetJobsAndStepsForRun returns a list of jobs and a list of steps that are contained within the given workflow run.
