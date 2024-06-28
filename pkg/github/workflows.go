@@ -577,6 +577,16 @@ func ParseEchoInputsLogs(logs string) map[string]string {
 	return inputs
 }
 
+// IsErrorLog returns true if the given log line is deemed as an error log.
+func IsErrorLog(line string) bool {
+	return strings.Contains(line, "level=error") ||
+		strings.Contains(line, "❌") ||
+		strings.Contains(line, "🟥") ||
+		strings.Contains(line, "ERROR:") ||
+		strings.Contains(line, "Warning:") ||
+		strings.Contains(line, "Error:")
+}
+
 // GetJobsAndStepsForRun returns a list of jobs and a list of steps that are contained within the given workflow run.
 // Jobs and Steps must be parsed together due to the way the GitHub API couples them together.
 func GetJobsAndStepsForRun(
@@ -660,7 +670,7 @@ func GetJobsAndStepsForRun(
 
 					lines := strings.Split(logs, "\n")
 					for _, line := range lines {
-						if strings.Contains(line, "level=error") || strings.Contains(line, "❌") || strings.Contains(line, "🟥") {
+						if IsErrorLog(line) {
 							job.ErrorLogs = append(job.ErrorLogs, line)
 						}
 					}
