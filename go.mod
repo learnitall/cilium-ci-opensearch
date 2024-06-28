@@ -5,9 +5,9 @@ go 1.21.7
 require (
 	github.com/gofri/go-github-ratelimit v1.1.0
 	github.com/google/go-github/v60 v60.0.0
-	github.com/hashicorp/go-retryablehttp v0.7.5
+	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/jstemmer/go-junit-report/v2 v2.1.0
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 )
 
 require (
