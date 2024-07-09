@@ -1,34 +1,40 @@
 {
     "include": [
         {
-            "name": "cilium-cilium-schedule-events-main",
+            "name": "cilium-cilium-main",
             "repository": "cilium/cilium",
             "branch": "main",
-            "events": "schedule"
+            "events": "schedule,push"
         },
         {
-            "name": "cilium-cilium-dispatch-events-1.13",
+            "name": "cilium-cilium-1.13",
             "repository": "cilium/cilium",
             "branch": "v1.13",
-            "events": "workflow_dispatch"
+            "events": "workflow_dispatch,push"
         },
         {
-            "name": "cilium-cilium-dispatch-events-1.14",
+            "name": "cilium-cilium-1.14",
             "repository": "cilium/cilium",
             "branch": "v1.14",
-            "events": "workflow_dispatch"
+            "events": "workflow_dispatch,push"
         }, 
         {
-            "name": "cilium-cilium-dispatch-events-1.15",
+            "name": "cilium-cilium-1.15",
             "repository": "cilium/cilium",
             "branch": "v1.15",
-            "events": "workflow_dispatch"
+            "events": "workflow_dispatch,push"
         }, 
         {
-            "name": "cilium-ciliumcli-schedule-events-main",
+            "name": "cilium-cilium-1.16",
+            "repository": "cilium/cilium",
+            "branch": "v1.16",
+            "events": "workflow_dispatch,push"
+        },
+        {
+            "name": "cilium-ciliumcli-main",
             "repository": "cilium/cilium-cli",
             "branch": "main",
-            "events": "schedule"
+            "events": "schedule,push"
         }
     ]
 }
