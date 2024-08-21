@@ -273,7 +273,7 @@ var (
 			repoOwner := repoParts[0]
 			repoName := repoParts[1]
 
-			client, err := gh.NewGitHubClient(os.Getenv("GITHUB_TOKEN"), logger)
+			client, err := gh.NewGitHubClient(gh.GetGitHubAuthToken(), logger)
 			if err != nil {
 				logger.Error("Unable to create new GitHub Client", "err", err)
 				os.Exit(1)
