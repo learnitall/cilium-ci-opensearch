@@ -12,6 +12,11 @@ type typeRootParams struct {
 	Verbose bool
 }
 
+const (
+	timeFormatYearMonthDayHour = "2006-01-02T15"
+	timeFormatYearMonthDay     = "2006-01-02"
+)
+
 var (
 	rootCmd    = &cobra.Command{}
 	rootParams = &typeRootParams{}
