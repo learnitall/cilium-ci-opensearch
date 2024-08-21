@@ -34,10 +34,6 @@ type typeWorkflowRunsParams struct {
 	ParseWorkflowDispatchInputs bool
 }
 
-const (
-	timeFormat = "2006-01-02T15"
-)
-
 func setTestedFields(
 	ctx context.Context,
 	logger *slog.Logger,
@@ -248,16 +244,16 @@ var (
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			tz := time.Now().Local().Location()
 
-			s, err := time.ParseInLocation(timeFormat, workflowRunsParams.SinceStr, tz)
+			s, err := time.ParseInLocation(timeFormatYearMonthDayHour, workflowRunsParams.SinceStr, tz)
 			if err != nil {
-				return fmt.Errorf("unable to parse '%s' to format of '%s': %w", workflowRunsParams.SinceStr, time.DateOnly, err)
+				return fmt.Errorf("unable to parse '%s' to format of '%s': %w", workflowRunsParams.SinceStr, timeFormatYearMonthDayHour, err)
 			}
 
 			workflowRunsParams.Since = s
 
-			u, err := time.ParseInLocation(timeFormat, workflowRunsParams.UntilStr, tz)
+			u, err := time.ParseInLocation(timeFormatYearMonthDayHour, workflowRunsParams.UntilStr, tz)
 			if err != nil {
-				return fmt.Errorf("unable to parse '%s' to format of '%s': %w", workflowRunsParams.UntilStr, time.DateOnly, err)
+				return fmt.Errorf("unable to parse '%s' to format of '%s': %w", workflowRunsParams.UntilStr, timeFormatYearMonthDayHour, err)
 			}
 
 			workflowRunsParams.Until = u
@@ -304,14 +300,14 @@ var (
 
 func init() {
 	workflowRunsCmd.PersistentFlags().StringVarP(
-		&workflowRunsParams.SinceStr, "since", "s", time.Now().Add(-time.Hour*24*7).Format(timeFormat),
-		"Duration specifying how far back in time to query for workflow runs. "+
+		&workflowRunsParams.SinceStr, "since", "s", time.Now().Add(-time.Hour*24*7).Format(timeFormatYearMonthDayHour),
+		"Date specifying how far back in time to query for workflow runs. "+
 			"Workflows older than this time will not be returned. "+
 			"Uses hour granularity. Time is inclusive. Expected format is YYYY-MM-DDTHH.",
 	)
 	workflowRunsCmd.PersistentFlags().StringVarP(
-		&workflowRunsParams.UntilStr, "until", "u", time.Now().Format(timeFormat),
-		"Duration specifying the latest point in time to query for workflow runs. "+
+		&workflowRunsParams.UntilStr, "until", "u", time.Now().Format(timeFormatYearMonthDayHour),
+		"Date specifying the latest point in time to query for workflow runs. "+
 			"Workflows created after this time will not be returned. "+
 			"Uses hour granularity. Time is inclusive. Expected format is YYYY-MM-DDTHH.",
 	)
