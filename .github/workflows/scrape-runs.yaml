@@ -26,7 +26,7 @@ on:
         required: false
         type: string
         default: push
-      
+
 env:
   TARGET_INDEX: runs-oss
 
@@ -66,7 +66,7 @@ jobs:
         run: |
           cat /tmp/matrix.json
           echo "matrix=$(cat /tmp/matrix.json)" >> $GITHUB_OUTPUT
-    
+
   scrape-and-index:
     needs: setup-matrix
     strategy:
@@ -97,48 +97,13 @@ jobs:
             --since ${{ matrix.since }} \
             --events ${{ matrix.events }} \
             --index ${{ env.TARGET_INDEX }} \
-            --verbose > results.json
-      - name: Bail if no results were found
-        id: bail
-        run: |
-          ls -lah results.json
-
-          if ! [ -s results.json ]; then
-            echo "No results, exiting early"
-            echo "bail=bail" >> $GITHUB_OUTPUT
-          fi
-      - name: Create splits
-        if: ${{ steps.bail.outputs.bail != 'bail' }}
-        run: |
-          mkdir splits
-          cd splits
-          split -l 200 ../results.json
-          ls -lah
-          cd ..
-      - name: Perform bulk requests
-        if: ${{ steps.bail.outputs.bail != 'bail' }}
-        working-directory: ./splits
-        run: |
-          set -x
-          for fn in ./*; do
-            curl -XPOST \
-              --data-binary @$fn \
-              --output $fn-response.json \
-              -H "Content-Type: application/json" \
-              --verbose \
-              -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASS }} \
-              ${{ vars.OPENSEARCH_URL }}/_bulk
-          done
-      - name: Upload results
-        if: ${{ steps.bail.outputs.bail != 'bail' }}
-        uses: actions/upload-artifact@v4
+            --verbose > ./results.json
+      - name: Export to OpenSearch
+        uses: ./.github/actions/index
         with:
-          name: ${{ matrix.name }}
-          path: "splits/**"
-      - name: Fail if any items failed to index
-        if: ${{ steps.bail.outputs.bail != 'bail' }}
-        working-directory: ./splits
-        run: |
-          cat *.json | jq --exit-status '.errors | not'
-          cat *.json | jq --exit-status '.error | not'
-
+          artifact-name: ${{ matrix.name }}
+          bulk-file: ./results.json
+          temp-dir: /tmp
+          opensearch-url: ${{ secrets.OPENSEARCH_URL }}
+          opensearch-user: ${{ secrets.OPENSEARCH_USER }}
+          opensearch-pass: ${{ secrets.OPENSEARCH_PASS }}

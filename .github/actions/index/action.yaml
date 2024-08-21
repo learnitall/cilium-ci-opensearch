@@ -1,0 +1,74 @@
+name: "index-to-opensearch"
+description: "Index results to OpenSearch"
+
+inputs:
+  artifact-name:
+    description: "Name of artifact to create with responses"
+  bulk-file:
+    description: "Path to JSON file containing bulk requests"
+  temp-dir:
+    description: "Temporary directory to use to prepare splits"
+    default: "/tmp"
+  opensearch-url:
+    description: "URL to OpenSearch instance to ingest to"
+  opensearch-user:
+    description: "Username to use when authenticating to OpenSearch"
+  opensearch-pass:
+    description: "Password to use when authenticating to OpenSearch"
+  dry-run:
+    description: "Do not actually index"
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Bail if no results were found
+      id: bail
+      shell: bash
+      run: |
+        ls -lah ${{ inputs.bulk-file }}
+        if ! [ -s ${{ inputs.bulk-file }} ]; then
+          echo "No results, exiting early"
+          echo "bail=bail" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create splits
+      if: ${{ steps.bail.outputs.bail != 'bail' }}
+      shell: bash
+      run: |
+        bulk_file="$(realpath ${{ inputs.bulk-file }})"
+        mkdir ${{ inputs.temp-dir }}/splits
+        cd ${{ inputs.temp-dir }}/splits
+        split -l 200 $bulk_file
+        ls -lah
+
+    - name: Perform bulk requests
+      if: ${{ steps.bail.outputs.bail != 'bail' && inputs.dry-run == 'false' }}
+      shell: bash
+      working-directory: ${{ inputs.temp-dir }}/splits
+      run: |
+        set -x
+        for fn in ./*; do
+          curl -XPOST \
+            --data-binary @$fn \
+            --output $fn-response.json \
+            -H "Content-Type: application/json" \
+            --verbose \
+            -u ${{ inputs.opensearch-user }}:${{ inputs.opensearch-pass }} \
+            ${{ inputs.opensearch-url }}/_bulk
+        done
+
+    - name: Upload results
+      if: ${{ steps.bail.outputs.bail != 'bail' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: "${{ inputs.temp-dir }}/splits/**"
+
+    - name: Fail if any items failed to index
+      if: ${{ steps.bail.outputs.bail != 'bail' }}
+      shell: bash
+      working-directory: ${{ inputs.temp-dir }}/splits
+      run: |
+        cat *.json | jq --exit-status '.errors | not'
+        cat *.json | jq --exit-status '.error | not'
