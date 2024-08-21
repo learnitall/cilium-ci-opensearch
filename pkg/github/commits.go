@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/google/go-github/v60/github"
+	"github.com/learnitall/cilium-ci-opensearch/pkg/types"
 )
 
 func GetCommitBySHA(
@@ -15,7 +16,7 @@ func GetCommitBySHA(
 	repoName string,
 	client *github.Client,
 	sha string,
-) (*Commit, error) {
+) (*types.Commit, error) {
 	c, _, err := client.Git.GetCommit(
 		ctx, repoOwner, repoName, sha,
 	)
@@ -31,7 +32,7 @@ func GetCommitBySHA(
 		)
 	}
 
-	author := User{}
+	author := types.User{}
 
 	a := c.GetAuthor()
 	if a != nil {
@@ -40,7 +41,7 @@ func GetCommitBySHA(
 		author.Name = a.GetName()
 	}
 
-	commit := &Commit{
+	commit := &types.Commit{
 		Message: c.GetMessage(),
 		Author:  author,
 		URL:     c.GetURL(),

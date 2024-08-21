@@ -18,6 +18,7 @@ import (
 	"github.com/google/go-github/v60/github"
 	"github.com/jstemmer/go-junit-report/v2/junit"
 
+	"github.com/learnitall/cilium-ci-opensearch/pkg/types"
 	"github.com/learnitall/cilium-ci-opensearch/pkg/util"
 )
 
@@ -37,7 +38,7 @@ func GetWorkflowRuns(
 	event string,
 	since time.Time,
 	until time.Time,
-) ([]*WorkflowRun, error) {
+) ([]*types.WorkflowRun, error) {
 	baseLogger := logger.With(
 		"repoOwner", repoOwner,
 		"repoName", repoName,
@@ -46,7 +47,7 @@ func GetWorkflowRuns(
 		"until", until,
 	)
 
-	workflowRuns := []*WorkflowRun{}
+	workflowRuns := []*types.WorkflowRun{}
 
 	runOpts := github.ListOptions{
 		PerPage: PER_PAGE,
@@ -106,85 +107,9 @@ func GetWorkflowRuns(
 		l.Info("Processing workflow runs", "total", runs.GetTotalCount(), "count", len(runs.WorkflowRuns))
 
 		for _, runRaw := range runs.WorkflowRuns {
-			run := WorkflowRun{
-				Type:             TypeNameWorkflowRun,
-				ID:               runRaw.GetID(),
-				Name:             runRaw.GetName(),
-				NodeID:           runRaw.GetNodeID(),
-				HeadBranch:       runRaw.GetHeadBranch(),
-				HeadSHA:          runRaw.GetHeadSHA(),
-				RunNumber:        runRaw.GetRunNumber(),
-				RunAttempt:       runRaw.GetRunAttempt(),
-				Event:            runRaw.GetEvent(),
-				DisplayTitle:     runRaw.GetDisplayTitle(),
-				Status:           runRaw.GetStatus(),
-				Conclusion:       runRaw.GetConclusion(),
-				ParentWorkflowID: runRaw.GetWorkflowID(),
-				URL:              runRaw.GetURL(),
-				CreatedAt:        runRaw.CreatedAt.Time,
-				UpdatedAt:        runRaw.UpdatedAt.Time,
-				RunStartedAt:     runRaw.RunStartedAt.Time,
-				JobsURL:          runRaw.GetJobsURL(),
-				LogsURL:          runRaw.GetLogsURL(),
-				ArtifactsURL:     runRaw.GetArtifactsURL(),
-			}
+			run := types.NewWorkflowRunFromRaw(runRaw)
 
-			rawRunHeadCommit := runRaw.GetHeadCommit()
-			rawRunHeadCommitAuthor := rawRunHeadCommit.GetAuthor()
-			run.HeadCommit = Commit{
-				Message: rawRunHeadCommit.GetMessage(),
-				Author: User{
-					Login: rawRunHeadCommitAuthor.GetLogin(),
-					Name:  rawRunHeadCommitAuthor.GetName(),
-					Email: rawRunHeadCommitAuthor.GetEmail(),
-				},
-				URL: rawRunHeadCommit.GetURL(),
-			}
-
-			rawRunActor := runRaw.GetActor()
-			run.Actor = User{
-				Login:   rawRunActor.GetLogin(),
-				ID:      rawRunActor.GetID(),
-				NodeID:  rawRunActor.GetNodeID(),
-				Name:    rawRunActor.GetName(),
-				Company: rawRunActor.GetCompany(),
-				Email:   rawRunActor.GetEmail(),
-			}
-
-			rawRunTriggeringActor := runRaw.GetTriggeringActor()
-			run.TriggeringActor = User{
-				Login:   rawRunTriggeringActor.GetLogin(),
-				ID:      rawRunTriggeringActor.GetID(),
-				NodeID:  rawRunTriggeringActor.GetNodeID(),
-				Name:    rawRunTriggeringActor.GetName(),
-				Company: rawRunTriggeringActor.GetCompany(),
-				Email:   rawRunTriggeringActor.GetEmail(),
-			}
-
-			rawRepository := runRaw.GetRepository()
-			run.Repository = Repository{
-				ID:       rawRepository.GetID(),
-				NodeID:   rawRepository.GetNodeID(),
-				Name:     rawRepository.GetName(),
-				FullName: rawRepository.GetFullName(),
-			}
-
-			rawRepositoryOwner := rawRepository.GetOwner()
-			run.Repository.Owner = User{
-				Login:   rawRepositoryOwner.GetLogin(),
-				ID:      rawRepositoryOwner.GetID(),
-				NodeID:  rawRepositoryOwner.GetNodeID(),
-				Name:    rawRepositoryOwner.GetName(),
-				Company: rawRepositoryOwner.GetCompany(),
-				Email:   rawRepositoryOwner.GetEmail(),
-			}
-
-			run.Link = fmt.Sprintf(
-				"https://github.com/%s/%s/actions/runs/%d",
-				run.Repository.Owner.Login, run.Repository.Name, run.ID,
-			)
-
-			workflowRuns = append(workflowRuns, &run)
+			workflowRuns = append(workflowRuns, run)
 		}
 
 		if runResp.NextPage == 0 {
@@ -204,9 +129,9 @@ func GetTestsForWorkflowRun(
 	ctx context.Context,
 	logger *slog.Logger,
 	client *github.Client,
-	run *WorkflowRun,
+	run *types.WorkflowRun,
 	allowedTestConclusions []string,
-) ([]Testsuite, []Testcase, error) {
+) ([]types.Testsuite, []types.Testcase, error) {
 	l := logger.With("workflow-id", run.ID)
 
 	l.Debug("Pulling artifacts for workflow")
@@ -307,10 +232,10 @@ func GetTestsForWorkflowRun(
 	}
 	defer zipReader.Close()
 
-	parseTestsuite := func(suite *junit.Testsuite) (*Testsuite, []Testcase, error) {
-		s := &Testsuite{
+	parseTestsuite := func(suite *junit.Testsuite) (*types.Testsuite, []types.Testcase, error) {
+		s := &types.Testsuite{
 			WorkflowRun:   run,
-			Type:          TypeNameTestsuite,
+			Type:          types.TypeNameTestsuite,
 			Name:          suite.Name,
 			TotalTests:    suite.Tests,
 			TotalFailures: suite.Failures,
@@ -338,12 +263,12 @@ func GetTestsForWorkflowRun(
 			s.EndTime = endTime
 		}
 
-		cases := []Testcase{}
+		cases := []types.Testcase{}
 
 		for _, testcase := range suite.Testcases {
-			tc := Testcase{
+			tc := types.Testcase{
 				Testsuite: s,
-				Type:      TypeNameTestcase,
+				Type:      types.TypeNameTestcase,
 				Name:      testcase.Name,
 			}
 
@@ -389,8 +314,8 @@ func GetTestsForWorkflowRun(
 		return s, cases, nil
 	}
 
-	suites := []Testsuite{}
-	cases := []Testcase{}
+	suites := []types.Testsuite{}
+	cases := []types.Testcase{}
 
 	for _, fil := range zipReader.File {
 		if !strings.HasSuffix(fil.Name, ".xml") || fil.FileInfo().IsDir() {
@@ -595,11 +520,11 @@ func GetJobsAndStepsForRun(
 	ctx context.Context,
 	logger *slog.Logger,
 	client *github.Client,
-	run *WorkflowRun,
+	run *types.WorkflowRun,
 	allowedConclusions []string,
 	allowedStepConclusions []string,
 	includeErrorLogs bool,
-) ([]JobRun, []StepRun, error) {
+) ([]types.JobRun, []types.StepRun, error) {
 	l := logger.With("workflow-id", run.ID)
 
 	l.Info("Pulling jobs for workflow run")
@@ -608,8 +533,8 @@ func GetJobsAndStepsForRun(
 		PerPage: PER_PAGE,
 	}
 
-	jobRuns := []JobRun{}
-	stepRuns := []StepRun{}
+	jobRuns := []types.JobRun{}
+	stepRuns := []types.StepRun{}
 
 	for {
 		jobs, jobResp, err := WrapWithRateLimitRetry[github.Jobs](
@@ -640,26 +565,7 @@ func GetJobsAndStepsForRun(
 				continue
 			}
 
-			job := JobRun{
-				WorkflowRun: run,
-				Type:        TypeNameJobRun,
-				ID:          jobRaw.GetID(),
-				RunID:       jobRaw.GetRunID(),
-				RunURL:      jobRaw.GetRunURL(),
-				NodeID:      jobRaw.GetNodeID(),
-				URL:         jobRaw.GetURL(),
-				Status:      jobRaw.GetStatus(),
-				Conclusion:  jobRaw.GetConclusion(),
-				CreatedAt:   jobRaw.GetCreatedAt().Time,
-				StartedAt:   jobRaw.GetStartedAt().Time,
-				CompletedAt: jobRaw.GetCompletedAt().Time,
-				Name:        jobRaw.GetName(),
-				Duration:    jobRaw.CompletedAt.Sub(jobRaw.StartedAt.Time),
-			}
-			job.Link = fmt.Sprintf(
-				"https://github.com/%s/%s/actions/runs/%d/job/%d",
-				run.Repository.Owner.Login, run.Repository.Name, run.ID, job.ID,
-			)
+			job := types.NewJobRunFromRaw(run, jobRaw)
 
 			if job.Conclusion != "success" && includeErrorLogs {
 				logs, err := GetLogsForJob(ctx, logger, client, job.ID, run.Repository.Owner.Login, run.Repository.Name)
@@ -679,9 +585,9 @@ func GetJobsAndStepsForRun(
 				}
 			}
 
-			jobRuns = append(jobRuns, job)
+			jobRuns = append(jobRuns, *job)
 
-			steps := GetStepsForJob(ctx, logger, jobRaw, &job, allowedStepConclusions)
+			steps := GetStepsForJob(ctx, logger, jobRaw, job, allowedStepConclusions)
 			stepRuns = append(stepRuns, steps...)
 		}
 
@@ -699,10 +605,10 @@ func GetStepsForJob(
 	ctx context.Context,
 	logger *slog.Logger,
 	jobRaw *github.WorkflowJob,
-	job *JobRun,
+	job *types.JobRun,
 	allowedConclusions []string,
-) []StepRun {
-	steps := []StepRun{}
+) []types.StepRun {
+	steps := []types.StepRun{}
 
 	for _, stepRaw := range jobRaw.Steps {
 		if c := stepRaw.GetConclusion(); !util.Contains(allowedConclusions, c) {
@@ -714,18 +620,9 @@ func GetStepsForJob(
 			continue
 		}
 
-		step := StepRun{
-			JobRun:      job,
-			Type:        TypeNameStepRun,
-			Name:        stepRaw.GetName(),
-			Status:      stepRaw.GetStatus(),
-			Conclusion:  stepRaw.GetConclusion(),
-			Number:      stepRaw.GetNumber(),
-			StartedAt:   stepRaw.GetStartedAt().Time,
-			CompletedAt: stepRaw.GetCompletedAt().Time,
-		}
+		step := types.NewStepRunFromRaw(job, stepRaw)
 
-		steps = append(steps, step)
+		steps = append(steps, *step)
 	}
 
 	return steps
