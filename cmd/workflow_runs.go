@@ -14,6 +14,7 @@ import (
 	gh "github.com/learnitall/cilium-ci-opensearch/pkg/github"
 	"github.com/learnitall/cilium-ci-opensearch/pkg/log"
 	"github.com/learnitall/cilium-ci-opensearch/pkg/opensearch"
+	"github.com/learnitall/cilium-ci-opensearch/pkg/types"
 )
 
 type typeWorkflowRunsParams struct {
@@ -41,8 +42,8 @@ func setTestedFields(
 	event,
 	repoOwner,
 	repoName string,
-	run *gh.WorkflowRun,
-	jobs *[]gh.JobRun,
+	run *types.WorkflowRun,
+	jobs *[]types.JobRun,
 ) {
 	if event != "workflow_dispatch" {
 		run.TestedCommit = run.HeadCommit
@@ -56,7 +57,7 @@ func setTestedFields(
 		return
 	}
 
-	var echoJob *gh.JobRun
+	var echoJob *types.JobRun
 
 	for _, job := range *jobs {
 		if job.Name == "Echo Workflow Dispatch Inputs" {
@@ -180,7 +181,7 @@ func pullRunsWithEventAndStatus(
 		// ariane or executed as part of a PR. Add a flag to ignore PRs.
 		// setTestedFields(ctx, runLogger, client, event, repoOwner, repoName, run, &jobs)
 
-		if err := opensearch.BulkWriteObjects[gh.JobRun](jobs, rootParams.Index, os.Stdout); err != nil {
+		if err := opensearch.BulkWriteObjects[types.JobRun](jobs, rootParams.Index, os.Stdout); err != nil {
 			runLogger.Error(
 				"Unexepected error while writing job run bulk entries",
 				"err", err,
@@ -188,7 +189,7 @@ func pullRunsWithEventAndStatus(
 			os.Exit(1)
 		}
 
-		if err := opensearch.BulkWriteObjects[gh.StepRun](steps, rootParams.Index, os.Stdout); err != nil {
+		if err := opensearch.BulkWriteObjects[types.StepRun](steps, rootParams.Index, os.Stdout); err != nil {
 			runLogger.Error(
 				"Unexepected error while writing step run bulk entries",
 				"err", err,
@@ -209,7 +210,7 @@ func pullRunsWithEventAndStatus(
 			os.Exit(1)
 		}
 
-		if err := opensearch.BulkWriteObjects[gh.Testsuite](suites, rootParams.Index, os.Stdout); err != nil {
+		if err := opensearch.BulkWriteObjects[types.Testsuite](suites, rootParams.Index, os.Stdout); err != nil {
 			runLogger.Error(
 				"Unexepected error while writing job run bulk entries",
 				"err", err,
@@ -217,7 +218,7 @@ func pullRunsWithEventAndStatus(
 			os.Exit(1)
 		}
 
-		if err := opensearch.BulkWriteObjects[gh.Testcase](cases, rootParams.Index, os.Stdout); err != nil {
+		if err := opensearch.BulkWriteObjects[types.Testcase](cases, rootParams.Index, os.Stdout); err != nil {
 			runLogger.Error(
 				"Unexepected error while writing step run bulk entries",
 				"err", err,
@@ -226,7 +227,7 @@ func pullRunsWithEventAndStatus(
 		}
 	}
 
-	if err := opensearch.BulkWriteObjects[*gh.WorkflowRun](runs, rootParams.Index, os.Stdout); err != nil {
+	if err := opensearch.BulkWriteObjects[*types.WorkflowRun](runs, rootParams.Index, os.Stdout); err != nil {
 		eventLogger.Error(
 			"Unexepected error while writing workflow run bulk entries",
 			"err", err,

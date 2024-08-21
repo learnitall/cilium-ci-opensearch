@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/learnitall/cilium-ci-opensearch/pkg/github"
+	"github.com/learnitall/cilium-ci-opensearch/pkg/types"
 )
 
 type BulkEntry struct {
@@ -39,18 +39,25 @@ func (b *BulkEntry) Write(target io.Writer) {
 // Equal objects have the same ID.
 func GetDocumentID(obj any) (string, error) {
 	switch o := obj.(type) {
-	case *github.WorkflowRun:
+	case *types.WorkflowRun:
 		return fmt.Sprintf("%d-%d", o.ID, o.RunAttempt), nil
-	case github.JobRun:
+	case types.JobRun:
 		return fmt.Sprintf("%d-%d-%d", o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, o.ID), nil
-	case github.StepRun:
+	case types.StepRun:
 		return fmt.Sprintf("%d-%d-%d-%d", o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, o.ID, o.Number), nil
-	case github.Testsuite:
+	case types.Testsuite:
 		return fmt.Sprintf("%d-%d-%s", o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, o.JUnitFilename), nil
-	case github.Testcase:
+	case types.Testcase:
 		return fmt.Sprintf(
 			"%d-%d-%s-%s",
 			o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, o.Testsuite.JUnitFilename, o.Name,
+		), nil
+	case types.FailureRate:
+		return fmt.Sprintf(
+			"%d-%s-%s-%s-%s-%s",
+			o.Repository.ID, o.Event, o.HeadBranch,
+			o.Since.Format("2006-01-02"), o.Until.Format("2006-01-02"),
+			o.DocumentIdentifier,
 		), nil
 	}
 
