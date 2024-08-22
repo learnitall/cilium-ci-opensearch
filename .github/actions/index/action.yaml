@@ -70,5 +70,11 @@ runs:
       shell: bash
       working-directory: ${{ inputs.temp-dir }}/splits
       run: |
+        for f in *-response.json; do
+          if [[ ! -s $f ]]; then
+            echo "Response file $f is empty"
+            exit 1
+          fi
+        done
         cat *.json | jq --exit-status '.errors | not'
         cat *.json | jq --exit-status '.error | not'
