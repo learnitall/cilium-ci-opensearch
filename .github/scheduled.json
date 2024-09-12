@@ -25,10 +25,28 @@
       "events": "workflow_dispatch,push"
     },
     {
-      "name": "cilium-ciliumcli-main",
-      "repository": "cilium/cilium-cli",
+      "name": "cilium-tetragon-main",
+      "repository": "cilium/tetragon",
       "branch": "main",
-      "events": "schedule,push"
+      "events": "push"
+    },
+    {
+      "name": "cilium-tetragon-v1.2",
+      "repository": "cilium/tetragon",
+      "branch": "v1.2",
+      "events": "push"
+    },
+    {
+      "name": "cilium-tetragon-v1.1",
+      "repository": "cilium/tetragon",
+      "branch": "v1.1",
+      "events": "push"
+    },
+    {
+      "name": "cilium-tetragon-v1.0",
+      "repository": "cilium/tetragon",
+      "branch": "v1.0",
+      "events": "push"
     }
   ]
 }
