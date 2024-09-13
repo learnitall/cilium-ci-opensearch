@@ -35,6 +35,19 @@ func (b *BulkEntry) Write(target io.Writer) {
 	target.Write([]byte("\n"))
 }
 
+func jsonEscapeString(i string) (string, error) {
+	if len(i) == 0 {
+		return "", nil
+	}
+
+	b, err := json.Marshal(i)
+	if err != nil {
+		return "", fmt.Errorf("unable to escape string '%s': %v", i, err)
+	}
+	// Trim the beginning and trailing " character
+	return string(b[1 : len(b)-1]), nil
+}
+
 // GetDocumentID returns a unique document ID for the given object.
 // Equal objects have the same ID.
 func GetDocumentID(obj any) (string, error) {
@@ -46,18 +59,30 @@ func GetDocumentID(obj any) (string, error) {
 	case types.StepRun:
 		return fmt.Sprintf("%d-%d-%d-%d", o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, o.ID, o.Number), nil
 	case types.Testsuite:
-		return fmt.Sprintf("%d-%d-%s", o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, o.JUnitFilename), nil
+		junitFilename, err := jsonEscapeString(o.JUnitFilename)
+		if err != nil {
+			return "", fmt.Errorf("unable to get document id for Testsuite: %v", err)
+		}
+		return fmt.Sprintf("%d-%d-%s", o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, junitFilename), nil
 	case types.Testcase:
+		junitFilename, err := jsonEscapeString(o.Testsuite.JUnitFilename)
+		if err != nil {
+			return "", fmt.Errorf("unable to get document id for Testsuite in Testcase: %v", err)
+		}
 		return fmt.Sprintf(
 			"%d-%d-%s-%s",
-			o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, o.Testsuite.JUnitFilename, o.Name,
+			o.WorkflowRun.ID, o.WorkflowRun.RunAttempt, junitFilename, o.Name,
 		), nil
 	case types.FailureRate:
+		docIdentifier, err := jsonEscapeString(o.DocumentIdentifier)
+		if err != nil {
+			return "", fmt.Errorf("unable to get document id for failure rate: %v", err)
+		}
 		return fmt.Sprintf(
 			"%d-%s-%s-%s-%s-%s",
 			o.Repository.ID, o.Event, o.HeadBranch,
 			o.Since.Format("2006-01-02"), o.Until.Format("2006-01-02"),
-			o.DocumentIdentifier,
+			docIdentifier,
 		), nil
 	}
 
