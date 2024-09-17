@@ -109,6 +109,13 @@ func GetWorkflowRuns(
 		for _, runRaw := range runs.WorkflowRuns {
 			run := types.NewWorkflowRunFromRaw(runRaw)
 
+			duration, err := GetWorkflowRunDuration(ctx, l, client, run)
+			if err != nil {
+				return nil, err
+			}
+
+			run.WorkflowDuration = duration
+
 			workflowRuns = append(workflowRuns, run)
 		}
 
@@ -120,6 +127,34 @@ func GetWorkflowRuns(
 	}
 
 	return workflowRuns, nil
+}
+
+// GetWorkflowRunDuration gets the total amount of time that a workflow run took.
+// This is retrieved through GitHub's usage API and is not available in a WorkflowRun object itself.
+func GetWorkflowRunDuration(
+	ctx context.Context,
+	logger *slog.Logger,
+	client *github.Client,
+	run *types.WorkflowRun,
+) (time.Duration, error) {
+	l := logger.With("workflow-id", run.ID)
+
+	l.Debug("Pulling run duration for workflow")
+
+	usage, _, err := WrapWithRateLimitRetry[github.WorkflowRunUsage](
+		ctx, l,
+		func() (*github.WorkflowRunUsage, *github.Response, error) {
+			return client.Actions.GetWorkflowRunUsageByID(ctx, run.Repository.Owner.Login, run.Repository.Name, run.ID)
+		},
+	)
+
+	if err != nil {
+		return -1, fmt.Errorf(
+			"unable to pull workflow run duration for run with ID %d: %w", run.ID, err,
+		)
+	}
+
+	return time.Duration(usage.GetRunDurationMS() * 1000000), nil
 }
 
 // GetTestsForWorkflowRun checks if the given WorkflowRun contains a known JUnit artifact.

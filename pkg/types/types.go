@@ -93,6 +93,7 @@ type WorkflowRun struct {
 	HeadSHA                string            `json:"head_sha,omitempty"`
 	HeadCommit             Commit            `json:"head_commit,omitempty"`
 	WorkflowDispatchInputs map[string]string `json:"workflow_dispatch_inputs,omitempty"`
+	WorkflowDuration       time.Duration     `json:"workflow_duration,omitempty"`
 }
 
 func NewWorkflowRunFromRaw(runRaw *github.WorkflowRun) *WorkflowRun {
@@ -188,9 +189,9 @@ type JobRun struct {
 	Name        string    `json:"job_name,omitempty"`
 	Logs        string    `json:"job_logs,omitempty"`
 	// ErrorLogs contains log lines that contain an error.
-	ErrorLogs []string      `json:"job_error_logs,omitempty"`
-	Link      string        `json:"job_link,omitempty"`
-	Duration  time.Duration `json:"job_duration,omitempty"`
+	ErrorLogs   []string      `json:"job_error_logs,omitempty"`
+	Link        string        `json:"job_link,omitempty"`
+	JobDuration time.Duration `json:"job_duration,omitempty"`
 }
 
 func NewJobRunFromRaw(parent *WorkflowRun, jobRaw *github.WorkflowJob) *JobRun {
@@ -208,7 +209,7 @@ func NewJobRunFromRaw(parent *WorkflowRun, jobRaw *github.WorkflowJob) *JobRun {
 		StartedAt:   jobRaw.GetStartedAt().Time,
 		CompletedAt: jobRaw.GetCompletedAt().Time,
 		Name:        jobRaw.GetName(),
-		Duration:    jobRaw.CompletedAt.Sub(jobRaw.StartedAt.Time),
+		JobDuration: jobRaw.CompletedAt.Sub(jobRaw.StartedAt.Time),
 	}
 	job.Link = fmt.Sprintf(
 		"https://github.com/%s/%s/actions/runs/%d/job/%d",
